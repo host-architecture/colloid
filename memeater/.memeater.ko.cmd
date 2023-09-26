@@ -1,0 +1,1 @@
+savedcmd_/home/midhul/colloid/memeater/memeater.ko := ld -r  -m elf_x86_64 -z noexecstack   --build-id=sha1  -T scripts/module.lds -o /home/midhul/colloid/memeater/memeater.ko /home/midhul/colloid/memeater/memeater.o /home/midhul/colloid/memeater/memeater.mod.o;  true

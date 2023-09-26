@@ -1,0 +1,1 @@
+cmd_/home/midhul/mio/kernel/miomap/miomap.ko := ld -r -m elf_x86_64  -z max-page-size=0x200000  --build-id  -T ./scripts/module-common.lds -o /home/midhul/mio/kernel/miomap/miomap.ko /home/midhul/mio/kernel/miomap/miomap.o /home/midhul/mio/kernel/miomap/miomap.mod.o;  true
