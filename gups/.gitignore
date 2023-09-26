@@ -1,0 +1,6 @@
+# Binary
+gups
+*.o
+
+# Logs
+log.chaiio
