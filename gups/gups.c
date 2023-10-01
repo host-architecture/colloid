@@ -250,6 +250,7 @@ void *thread_function(void *arg) {
 }
 
 int main(int argc, char *argv[]) {
+    setbuf(stdout, NULL);
     int cores[8] = {3,7,11,15,19,23,27,31};
     if (argc < 2) {
         fprintf(stderr, "Usage: %s <num_threads> [manual] [fraction of hotset in local] [distribute/localize]\n", argv[0]);
