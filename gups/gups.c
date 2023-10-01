@@ -13,9 +13,13 @@
 #include <sched.h>
 #include <pthread.h>
 #include <stdatomic.h>
+#include <numaif.h>
 
 #define LOG_INTERVAL_MS 1000
 #define MAX_THREADS 8
+
+#define LOCAL_NUMA 3
+#define REMOTE_NUMA 2
 
 // #define WSS 103079215104ULL
 #define WSS 77309411328ULL
@@ -50,6 +54,8 @@ typedef struct {
     size_t buf_size;
     size_t hot_size;
     _Atomic uint64_t *count_ptr;
+    int manual_placement;
+    size_t local_hot_pages;
 } ThreadArgs;
 
 void *thread_function(void *arg) {
@@ -64,9 +70,86 @@ void *thread_function(void *arg) {
     uint64_t cur_ts=0, prev_ts=0;
     cur_ts = rdtscp();
     prev_ts = cur_ts;
+
+    if(args->manual_placement) {
+        unsigned long local_nodemask = (1UL << LOCAL_NUMA);
+        unsigned long remote_nodemask = (1UL << REMOTE_NUMA);
+        if(mbind(a, args->buf_size - args->hot_size, MPOL_BIND, &remote_nodemask, sizeof(remote_nodemask)*8, MPOL_MF_STRICT) != 0) {
+            fprintf(stderr, "first mbind failed\n");
+            return NULL;
+        }
+        if(args->local_hot_pages > 0){
+            if(mbind(a + args->buf_size - args->hot_size, args->local_hot_pages*4096, MPOL_BIND, &local_nodemask, sizeof(local_nodemask)*8, MPOL_MF_STRICT) != 0) {
+                fprintf(stderr, "second mbind failed\n");
+                return NULL;
+            }
+        }
+        if(mbind(a + args->buf_size - args->hot_size + args->local_hot_pages*4096, args->hot_size - args->local_hot_pages*4096, MPOL_BIND, &remote_nodemask, sizeof(remote_nodemask)*8, MPOL_MF_STRICT) != 0) {
+            fprintf(stderr, "first mbind failed\n");
+            return NULL;
+        }
+    }
     
     // printf("allocated %lu buf\n", args->buf_size);
     memset(a, 'm', args->buf_size);
+
+    // Perform manual placement if needed
+    // if(args->manual_placement) {
+    //     size_t pg_count = (args->buf_size)/4096ULL;
+    //     size_t hot_pg_count = (args->hot_size)/4096ULL;
+    //     void **page_ptrs = (void **)malloc(pg_count*sizeof(void *));
+    //     int *target_nodes = (int *)malloc(pg_count*sizeof(int));
+    //     int *move_status = (int *)malloc(pg_count*sizeof(int));
+    //     if(!page_ptrs || !target_nodes || !move_status) {
+    //         fprintf(stderr, "malloc failed in manual memory placement\n");
+    //         return NULL;
+    //     }
+    //     for(int pg_idx = 0; pg_idx < pg_count; pg_idx++) {
+    //         page_ptrs[pg_idx] = a + pg_idx*4096;
+    //         move_status[pg_idx] = 1024;
+    //     }
+    //     // Get current locations of pages
+    //     if(move_pages(0, pg_count, page_ptrs, NULL, move_status, 0) != 0) {
+    //         fprintf(stderr, "move_pages to remote failed\n");
+    //         return NULL;
+    //     }
+    //     size_t status_local = 0, status_remote = 0, status_fault = 0;
+    //     for(int pg_idx = 0; pg_idx < pg_count; pg_idx++) {
+    //         if(move_status[pg_idx] == LOCAL_NUMA) status_local += 1;
+    //         else if (move_status[pg_idx] == REMOTE_NUMA) status_remote += 1;
+    //         else if (move_status[pg_idx] == -14) status_fault += 1;
+    //         else {
+    //             printf("Different status: %d\n", move_status[pg_idx]);
+    //         }
+    //     }
+    //     printf("status local: %lu, status remote: %lu, status_fault: %lu\n", status_local, status_remote, status_fault);
+    //     // All pages in remote except required number of hot pages in local
+    //     size_t local_pg_count = 0;
+    //     for(int pg_idx = 0; pg_idx < pg_count; pg_idx++) {
+    //         int in_local = (pg_idx >= pg_count - hot_pg_count && pg_idx < pg_count - hot_pg_count + args->local_hot_pages);
+    //         target_nodes[pg_idx] = (in_local)?(LOCAL_NUMA):(REMOTE_NUMA);
+    //         if(in_local) local_pg_count += 1;
+    //     }
+    //     printf("local_pg_count: %lu\n", local_pg_count);
+    //     if(move_pages(0, pg_count, page_ptrs, target_nodes, move_status, MPOL_MF_MOVE) != 0) {
+    //         fprintf(stderr, "move_pages to remote failed\n");
+    //         return NULL;
+    //     }
+    //     status_local = 0; status_remote = 0; status_fault = 0;
+    //     for(int pg_idx = 0; pg_idx < pg_count; pg_idx++) {
+    //         if(move_status[pg_idx] == LOCAL_NUMA) status_local += 1;
+    //         else if (move_status[pg_idx] == REMOTE_NUMA) status_remote += 1;
+    //         else if (move_status[pg_idx] == -14) status_fault += 1;
+    //         else {
+    //             printf("Different status: %d\n", move_status[pg_idx]);
+    //         }
+    //     }
+    //     printf("status local: %lu, status remote: %lu, status_fault: %lu\n", status_local, status_remote, status_fault);
+    //     free(page_ptrs);
+    //     free(target_nodes);
+    //     free(move_status);
+    // }
+
     uint64_t x = 432437644 + args->thread_id;
     uint64_t count = 0, prev_count = 0;
     __m512i sum = _mm512_set_epi32(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
@@ -168,8 +251,8 @@ void *thread_function(void *arg) {
 
 int main(int argc, char *argv[]) {
     int cores[8] = {3,7,11,15,19,23,27,31};
-    if (argc != 2) {
-        fprintf(stderr, "Usage: %s <num_threads> <stats-path>\n", argv[0]);
+    if (argc < 2) {
+        fprintf(stderr, "Usage: %s <num_threads> [manual] [fraction of hotset in local] [distribute/localize]\n", argv[0]);
         return 1;
     }
 
@@ -177,6 +260,30 @@ int main(int argc, char *argv[]) {
     if (num_threads <= 0 || num_threads > MAX_THREADS) {
         fprintf(stderr, "Number of threads invalid\n");
         return 1;
+    }
+
+    int manual_placement = 0;
+    float hotset_local_frac = 0.0;
+    int placement_mode = 0;
+    enum {
+        PLACEMENT_DISTRIBUTE,
+        PLACEMENT_LOCALIZE
+    };
+    if(argc >= 3 && strncmp(argv[2], "manual", sizeof("manual")) == 0) {
+        if(argc < 5) {
+            fprintf(stderr, "Usage: %s <num_threads> [manual] [fraction of hotset in local] [distribute/localize]\n", argv[0]);
+            return 1;
+        }
+        manual_placement = 1;
+        hotset_local_frac = atof(argv[3]);
+        if(strncmp(argv[4], "distribute", sizeof("distribute")) == 0) {
+            placement_mode = PLACEMENT_DISTRIBUTE;
+        } else if(strncmp(argv[4], "localize", sizeof("localize")) == 0) {
+            placement_mode = PLACEMENT_LOCALIZE;
+        } else {
+            fprintf(stderr, "Unknown manual placement mode\n");
+            return 1;
+        }
     }
 
     // Get TSC frequency
@@ -196,12 +303,31 @@ int main(int argc, char *argv[]) {
     ThreadArgs thread_args[MAX_THREADS];
     cpu_set_t cpuset;
 
+    if(manual_placement && placement_mode == PLACEMENT_DISTRIBUTE) {
+        for(int i = 0; i < num_threads; i++) {
+            thread_args[i].local_hot_pages = (int)(hotset_local_frac*((HOTSS/4096ULL)/((size_t)num_threads)));
+        }
+    } else if(manual_placement && placement_mode == PLACEMENT_LOCALIZE) {
+        size_t total_local_pages = (int)(hotset_local_frac*(HOTSS/4096ULL));
+        size_t per_thread_hot_pages = ((HOTSS/4096ULL)/((size_t)num_threads));
+        for(int i = 0; i < num_threads; i++) {
+            if(total_local_pages > 0){
+                size_t num_pages = (total_local_pages < per_thread_hot_pages)?(total_local_pages):(per_thread_hot_pages);
+                thread_args[i].local_hot_pages = num_pages;
+                total_local_pages -= num_pages; 
+            } else {
+                thread_args[i].local_hot_pages = 0;
+            }
+        }
+    }
+
     for (int i = 0; i < num_threads; ++i) {
         thread_args[i].thread_id = i;
         thread_args[i].buf_size = ((WSS/4096ULL)/((size_t)num_threads))*4096ULL;
         thread_args[i].hot_size = ((HOTSS/4096ULL)/((size_t)num_threads))*4096ULL;
         atomic_init(&thread_counts[i], 0);
         thread_args[i].count_ptr = &thread_counts[i];
+        thread_args[i].manual_placement = manual_placement;
         
         CPU_ZERO(&cpuset);
         CPU_SET(cores[i], &cpuset);
