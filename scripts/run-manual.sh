@@ -1,11 +1,11 @@
 #!/bin/bash
 
-config="colloidmt-manual-gupsrw"
+config=$1
 gups_path=/home/midhul/colloid/gups
 mio_path=/home/midhul/mio-colloid
 record_path=/home/midhul/colloid/colloid-stats
 stats_path=/home/midhul/membw-eval
-gups_workload="gups-rw"
+gups_workload=$2
 gups_cores=4
 stream_num_cores=4
 stream_core_list="19,23,27,31"
@@ -23,6 +23,11 @@ function cleanup() {
 trap cleanup EXIT
 
 cleanup;
+
+# Make sure tiering is disabled
+swapoff -a
+echo 0 > /sys/kernel/mm/numa/demotion_enabled
+echo 0 > /proc/sys/kernel/numa_balancing
 
 # Run GUPS with varying percentage of hot set in local memory
 for x in 0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1; do
