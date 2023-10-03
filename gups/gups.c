@@ -74,10 +74,11 @@ void *thread_function(void *arg) {
     if(args->manual_placement) {
         unsigned long local_nodemask = (1UL << LOCAL_NUMA);
         unsigned long remote_nodemask = (1UL << REMOTE_NUMA);
-        if(mbind(a, args->buf_size - args->hot_size, MPOL_BIND, &remote_nodemask, sizeof(remote_nodemask)*8, MPOL_MF_STRICT) != 0) {
-            fprintf(stderr, "first mbind failed\n");
-            return NULL;
-        }
+        // if(mbind(a, args->buf_size - args->hot_size, MPOL_BIND, &remote_nodemask, sizeof(remote_nodemask)*8, MPOL_MF_STRICT) != 0) {
+        //     fprintf(stderr, "first mbind failed\n");
+        //     return NULL;
+        // }
+        // Setting mbind policy only for hot set. cold set will be allocated in remaining space
         if(args->local_hot_pages > 0){
             if(mbind(a + args->buf_size - args->hot_size, args->local_hot_pages*4096, MPOL_BIND, &local_nodemask, sizeof(local_nodemask)*8, MPOL_MF_STRICT) != 0) {
                 fprintf(stderr, "second mbind failed\n");
@@ -85,13 +86,27 @@ void *thread_function(void *arg) {
             }
         }
         if(mbind(a + args->buf_size - args->hot_size + args->local_hot_pages*4096, args->hot_size - args->local_hot_pages*4096, MPOL_BIND, &remote_nodemask, sizeof(remote_nodemask)*8, MPOL_MF_STRICT) != 0) {
-            fprintf(stderr, "first mbind failed\n");
+            fprintf(stderr, "third mbind failed\n");
             return NULL;
         }
     }
     
     // printf("allocated %lu buf\n", args->buf_size);
-    memset(a, 'm', args->buf_size);
+    // memset(a, 'm', args->buf_size);
+    // Fill buffer in reverse order, so that hot set pages fault and are allocated first (so that mbind policy can be satisfied)
+    // Remaining memory will be used to opportunistically allocate cold set pages
+    if(args->manual_placement) {
+        for(char *p = a + args->buf_size-1; p >= a; p--) {
+            *p = 'm';
+            asm volatile("" : : : "memory");
+        }
+    } else {
+        memset(a, 'm', args->buf_size);
+    }
+    
+
+    // Prevent compiler reordering
+    
 
     // Perform manual placement if needed
     // if(args->manual_placement) {
