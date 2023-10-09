@@ -30,8 +30,8 @@ echo 0 > /sys/kernel/mm/numa/demotion_enabled
 echo 0 > /proc/sys/kernel/numa_balancing
 
 # Run GUPS with varying percentage of hot set in local memory
-# for x in 0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1; do
-for x in 0 0.5 1; do
+for x in 0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1; do
+# for x in 0 0.5 1; do
     echo "Running $config-iso-x$x";
     $gups_path/$gups_workload $gups_cores manual $x distribute > $stats_path/$config-iso-x$x.gups.txt 2>&1 &
     pid_gups=$!;
@@ -51,8 +51,8 @@ for x in 0 0.5 1; do
 done;
 
 # Run GUPS with varying percentage of hot set in local memory + background traffic
-# for x in 0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1; do
-for x in 0 1; do
+for x in 0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1; do
+# for x in 0 1; do
     echo "Running $config-bg-x$x";
     PYTHONPATH=$PYTHONPATH:$mio_path python3 -m mio $config-bg-x$x --ant_cpus $stream_core_list --ant_num_cores $stream_num_cores --ant_mem_numa 3 --ant stream --ant_writefrac 50 --ant_inst_size 64 --ant_duration $(($duration+20)) --stats_colloidlat &
     pid_mio=$!;

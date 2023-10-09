@@ -1,0 +1,1 @@
+savedcmd_/home/midhul/colloid/colloid-mon/Module.symvers :=  scripts/mod/modpost -m -a     -o /home/midhul/colloid/colloid-mon/Module.symvers -T /home/midhul/colloid/colloid-mon/modules.order -i Module.symvers -e 
