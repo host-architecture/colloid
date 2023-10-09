@@ -5,3 +5,4 @@
 
 ./run-manual.sh colloidmtv2-manual-gupsrw gups-rw
 ./run-linux.sh colloidmtv2-linux-gupsrw gups-rw
+

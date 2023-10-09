@@ -1,6 +1,6 @@
 #!/bin/bash
 
-config="colloidmt-manual-gupsrw"
+config="colloidmtv2-manual-gupsr"
 gups_path=/home/midhul/colloid/gups
 mio_path=/home/midhul/mio-colloid
 record_path=/home/midhul/colloid/colloid-stats
@@ -8,12 +8,12 @@ stats_path=/home/midhul/membw-eval
 
 echo "App Throughput, no background traffic"
 for x in 0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1; do
-    cat $stats_path/$config-iso-x$x.gups.txt | tail -n 30 | awk '{sum+=2*$1} END {print (sum/NR)*4096/1e9;}'
+    cat $stats_path/$config-iso-x$x.gups.txt | tail -n 30 | awk '{sum+=$1} END {print (sum/NR)*4096/1e9;}'
 done;
 
 echo "App Throughput, with background traffic"
 for x in 0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1; do
-    cat $stats_path/$config-bg-x$x.gups.txt | tail -n 30 | awk '{sum+=2*$1} END {print (sum/NR)*4096/1e9;}'
+    cat $stats_path/$config-bg-x$x.gups.txt | tail -n 30 | awk '{sum+=$1} END {print (sum/NR)*4096/1e9;}'
 done;
 
 # Local DRAM BW usage
@@ -23,7 +23,7 @@ for x in 0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1; do
 done;
 echo "Local DRAM BW usage, with background traffic (app, background)"
 for x in 0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1; do
-    paste <(cat $stats_path/$config-bg-x$x.gups.txt | tail -n 30) <(cat $stats_path/$config-bg-x$x.stats.txt | tail -n 30) | awk '{print (2*$1*4096 - $6*64 -$7*64)/1e9, ($4*64+$5*64-2*$1*4096 + $6*64 + $7*64)/1e9}' | awk '{sum1 += $1; sum2 += $2} END {print sum1/NR, sum2/NR}';
+    paste <(cat $stats_path/$config-bg-x$x.gups.txt | tail -n 30) <(cat $stats_path/$config-bg-x$x.stats.txt | tail -n 30) | awk '{print ($1*4096 - $6*64 -$7*64)/1e9, ($4*64+$5*64-$1*4096 + $6*64 + $7*64)/1e9}' | awk '{sum1 += $1; sum2 += $2} END {print sum1/NR, sum2/NR}';
 done;
 
 # UPI Rx BW usage
@@ -49,10 +49,10 @@ done;
 # App hit rate
 echo "App hit rate, no background traffic"
 for x in 0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1; do
-    paste <(cat $stats_path/$config-iso-x$x.gups.txt | tail -n 30) <(cat $stats_path/$config-iso-x$x.stats.txt | tail -n 30) | awk '{print (2*$1*4096 - $6*64 -$7*64)/(2*$1*4096)}' | awk '{sum1 += $1;} END {print sum1/NR}';
+    paste <(cat $stats_path/$config-iso-x$x.gups.txt | tail -n 30) <(cat $stats_path/$config-iso-x$x.stats.txt | tail -n 30) | awk '{print ($1*4096 - $6*64 -$7*64)/($1*4096)}' | awk '{sum1 += $1;} END {print sum1/NR}';
 done;
 echo "App hit rate, with background traffic"
 for x in 0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1; do
-    paste <(cat $stats_path/$config-bg-x$x.gups.txt | tail -n 30) <(cat $stats_path/$config-bg-x$x.stats.txt | tail -n 30) | awk '{print (2*$1*4096 - $6*64 -$7*64)/(2*$1*4096)}' | awk '{sum1 += $1;} END {print sum1/NR}';
+    paste <(cat $stats_path/$config-bg-x$x.gups.txt | tail -n 30) <(cat $stats_path/$config-bg-x$x.stats.txt | tail -n 30) | awk '{print ($1*4096 - $6*64 -$7*64)/($1*4096)}' | awk '{sum1 += $1;} END {print sum1/NR}';
 done;
 
