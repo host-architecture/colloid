@@ -9,7 +9,7 @@ record_path=/home/midhul/colloid/colloid-stats
 stats_path=/home/midhul/membw-eval
 gups_workload=$2
 gups_cores=4
-stream_num_cores=4
+stream_num_cores=3
 stream_core_list="19,23,27,31"
 duration=1000
 

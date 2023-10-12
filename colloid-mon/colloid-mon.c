@@ -9,11 +9,13 @@
 #include <linux/memory-tiers.h>
 #include <linux/delay.h>
 
-#define CORE_MON 3
+extern int colloid_local_lat_gt_remote;
+
+#define CORE_MON 31
 #define WORKER_BUDGET 1000000
 #define LOG_SIZE 10000
-#define MIN_LOCAL_LAT 550
-#define MIN_REMOTE_LAT 1050
+#define MIN_LOCAL_LAT 40
+#define MIN_REMOTE_LAT 80
 
 // CHA counters are MSR-based.  
 //   The starting MSR address is 0x0E00 + 0x10*CHA
@@ -146,11 +148,13 @@ void thread_fun_poll_cha(struct work_struct *work) {
         cum_occ = cur_ctr_val[0][0] - prev_ctr_val[0][0];
         delta_tsc = cur_ctr_tsc[0][0] - prev_ctr_tsc[0][0];
         cur_occ = (cum_occ << 20)/delta_tsc;
-        cur_inserts = (cur_ctr_val[0][1] - prev_ctr_val[0][1])<<6;
+        cur_inserts = (cur_ctr_val[0][1] - prev_ctr_val[0][1])<<10;
         WRITE_ONCE(smoothed_occ_local, (cur_occ + 31*smoothed_occ_local)>>5);
         WRITE_ONCE(smoothed_inserts_local, (cur_inserts + 31*smoothed_inserts_local)>>5);
         cur_lat_local = (smoothed_inserts_local > 0)?(smoothed_occ_local/smoothed_inserts_local):(MIN_LOCAL_LAT);
-        WRITE_ONCE(smoothed_lat_local, (cur_lat_local > MIN_LOCAL_LAT)?(cur_lat_local):(MIN_LOCAL_LAT));
+        cur_lat_local = (cur_lat_local > MIN_LOCAL_LAT)?(cur_lat_local):(MIN_LOCAL_LAT);
+        WRITE_ONCE(smoothed_lat_local, cur_lat_local);
+        // WRITE_ONCE(smoothed_lat_local, (cur_lat_local*1000 + 31*smoothed_lat_local)/32);
         // log_buffer[log_idx].tsc = cur_ctr_tsc[0][0];
         // log_buffer[log_idx].occ_local = cur_occ;
         // log_buffer[log_idx].inserts_local = cur_inserts;
@@ -158,13 +162,15 @@ void thread_fun_poll_cha(struct work_struct *work) {
         cum_occ = cur_ctr_val[1][0] - prev_ctr_val[1][0];
         delta_tsc = cur_ctr_tsc[1][0] - prev_ctr_tsc[1][0];
         cur_occ = (cum_occ << 20)/delta_tsc;
-        cur_inserts = (cur_ctr_val[1][1] - prev_ctr_val[1][1])<<6;
+        cur_inserts = (cur_ctr_val[1][1] - prev_ctr_val[1][1])<<10;
         WRITE_ONCE(smoothed_occ_remote, (cur_occ + 31*smoothed_occ_remote)>>5);
         WRITE_ONCE(smoothed_inserts_remote, (cur_inserts + 31*smoothed_inserts_remote)>>5);
         cur_lat_remote = (smoothed_inserts_remote > 0)?(smoothed_occ_remote/smoothed_inserts_remote):(MIN_REMOTE_LAT);
         WRITE_ONCE(smoothed_lat_remote, (cur_lat_remote > MIN_REMOTE_LAT)?(cur_lat_remote):(MIN_REMOTE_LAT));
         // log_buffer[log_idx].occ_remote = cur_occ;
         // log_buffer[log_idx].inserts_remote = cur_inserts;
+        
+        WRITE_ONCE(colloid_local_lat_gt_remote, (smoothed_occ_local > smoothed_occ_remote));
 
         // log_idx = (log_idx+1)%LOG_SIZE;
 

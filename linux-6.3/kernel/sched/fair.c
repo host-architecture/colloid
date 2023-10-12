@@ -56,6 +56,8 @@
 #include "stats.h"
 #include "autogroup.h"
 
+extern int colloid_local_lat_gt_remote;
+
 /*
  * Targeted preemption latency for CPU-bound tasks:
  *
@@ -1598,6 +1600,10 @@ bool should_numa_migrate_memory(struct task_struct *p, struct page * page,
 		latency = numa_hint_fault_latency(page);
 		if (latency >= th)
 			return false;
+
+		if(READ_ONCE(colloid_local_lat_gt_remote)) {
+			return false;
+		}
 
 		return !numa_promotion_rate_limit(pgdat, rate_limit,
 						  thp_nr_pages(page));

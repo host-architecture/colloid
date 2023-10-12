@@ -40,10 +40,11 @@ __used __section("__versions") = {
 	{ 0x20ba4f3e, "rdmsr_on_cpu" },
 	{ 0xc5b6f236, "queue_work_on" },
 	{ 0xa19b956, "__stack_chk_fail" },
+	{ 0xd5bd3839, "colloid_local_lat_gt_remote" },
 	{ 0xbe617108, "module_layout" },
 };
 
 MODULE_INFO(depends, "");
 
 
-MODULE_INFO(srcversion, "DFFBBA462E3FFCF71519090");
+MODULE_INFO(srcversion, "462850277D8A618C30B222A");

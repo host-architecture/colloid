@@ -105,6 +105,9 @@ static int top_tier_adistance;
 static struct demotion_nodes *node_demotion __read_mostly;
 #endif /* CONFIG_MIGRATION */
 
+int colloid_local_lat_gt_remote = 0;
+EXPORT_SYMBOL(colloid_local_lat_gt_remote);
+
 static inline struct memory_tier *to_memory_tier(struct device *device)
 {
 	return container_of(device, struct memory_tier, dev);
