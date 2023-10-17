@@ -107,6 +107,8 @@ static struct demotion_nodes *node_demotion __read_mostly;
 
 int colloid_local_lat_gt_remote = 0;
 EXPORT_SYMBOL(colloid_local_lat_gt_remote);
+int colloid_nid_of_interest = NUMA_NO_NODE;
+EXPORT_SYMBOL(colloid_nid_of_interest);
 
 static inline struct memory_tier *to_memory_tier(struct device *device)
 {

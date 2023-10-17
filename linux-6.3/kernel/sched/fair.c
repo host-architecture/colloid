@@ -57,7 +57,7 @@
 #include "autogroup.h"
 
 extern int colloid_local_lat_gt_remote;
-
+extern int colloid_nid_of_interest;
 /*
  * Targeted preemption latency for CPU-bound tasks:
  *
@@ -1584,10 +1584,21 @@ bool should_numa_migrate_memory(struct task_struct *p, struct page * page,
 		unsigned long rate_limit;
 		unsigned int latency, th, def_th;
 
+		/*colloid: since we emulate slow tier with normal NUMA node,
+		in corner case, CPU on the slow NUMA could access its own page.
+		Avoid unnecessarily updating state (e.g. hot threshold) in this case*/
+		if(!node_is_toptier(dst_nid))
+			return false;
+
 		pgdat = NODE_DATA(dst_nid);
 		if (pgdat_free_space_enough(pgdat)) {
 			/* workload changed, reset hot threshold */
 			pgdat->nbp_threshold = 0;
+			if(sysctl_numa_balancing_mode & NUMA_BALANCING_COLLOID &&
+			   colloid_nid_of_interest == dst_nid &&
+			   READ_ONCE(colloid_local_lat_gt_remote))
+				return false;
+
 			return true;
 		}
 
@@ -1601,13 +1612,19 @@ bool should_numa_migrate_memory(struct task_struct *p, struct page * page,
 		if (latency >= th)
 			return false;
 
-		if(READ_ONCE(colloid_local_lat_gt_remote)) {
+		if(sysctl_numa_balancing_mode & NUMA_BALANCING_COLLOID &&
+		   colloid_nid_of_interest == dst_nid &&
+			READ_ONCE(colloid_local_lat_gt_remote))
 			return false;
-		}
 
 		return !numa_promotion_rate_limit(pgdat, rate_limit,
 						  thp_nr_pages(page));
 	}
+
+	/*In colloid, since we enable local hint faults, we may reach here
+	even if normal numa balancing is off. In that case, avoid going any futher. */
+	if(!(sysctl_numa_balancing_mode & NUMA_BALANCING_NORMAL))
+	   return false;
 
 	this_cpupid = cpu_pid_to_cpupid(dst_cpu, current->pid);
 	last_cpupid = page_cpupid_xchg_last(page, this_cpupid);
@@ -1673,6 +1690,32 @@ bool should_numa_migrate_memory(struct task_struct *p, struct page * page,
 	 */
 	return group_faults_cpu(ng, dst_nid) * group_faults(p, src_nid) * 3 >
 	       group_faults_cpu(ng, src_nid) * group_faults(p, dst_nid) * 4;
+}
+
+/*
+colloid
+Should we migrate page away from local NUMA node due to congestion?
+if yes, returns nid of destination node
+otherwise returns NUMA_NO_NODE
+*/
+int numa_migrate_memory_away_target(struct page *page, int src_nid) {
+	if(!(sysctl_numa_balancing_mode & NUMA_BALANCING_MEMORY_TIERING &&
+	     sysctl_numa_balancing_mode & NUMA_BALANCING_COLLOID))
+		 return NUMA_NO_NODE;
+	
+	if(src_nid != colloid_nid_of_interest)
+		return NUMA_NO_NODE;
+
+	if(!READ_ONCE(colloid_local_lat_gt_remote))
+		return NUMA_NO_NODE;
+
+	// Local memory is congested
+
+	// Want to demote hot pages
+	// TODO: Add condition that checks if page is in active list
+
+	return next_demotion_node(src_nid);
+
 }
 
 /*
@@ -2862,6 +2905,10 @@ void task_numa_fault(int last_cpupid, int mem_node, int pages, int flags)
 	if (!node_is_toptier(mem_node) &&
 	    (sysctl_numa_balancing_mode & NUMA_BALANCING_MEMORY_TIERING ||
 	     !cpupid_valid(last_cpupid)))
+		return;
+
+	/*colloid: NUMA fault stats not necessary when normal NUMA balancing is off*/
+	if(!(sysctl_numa_balancing_mode & NUMA_BALANCING_NORMAL))
 		return;
 
 	/* Allocate buffer to track faults on a per-node basis */

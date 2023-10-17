@@ -10,8 +10,10 @@
 #include <linux/delay.h>
 
 extern int colloid_local_lat_gt_remote;
+extern int colloid_nid_of_interest;
 
 #define CORE_MON 31
+#define LOCAL_NUMA 3
 #define WORKER_BUDGET 1000000
 #define LOG_SIZE 10000
 #define MIN_LOCAL_LAT 40
@@ -203,6 +205,7 @@ static int colloidmon_init(void)
         printk(KERN_ERR "Failed to create CHA workqueue\n");
         return -ENOMEM;
     }
+
     INIT_WORK(&poll_cha, thread_fun_poll_cha);
     poll_cha_init();
     pr_info("Programmed counters");
@@ -210,6 +213,8 @@ static int colloidmon_init(void)
     init_mon_state();
     WRITE_ONCE(terminate_mon, 0);
     queue_work_on(CORE_MON, poll_cha_queue, &poll_cha);
+
+    WRITE_ONCE(colloid_nid_of_interest, LOCAL_NUMA);
 
     int i;
     for(i = 0; i < 60; i++) {

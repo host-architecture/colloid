@@ -4640,7 +4640,7 @@ static struct ctl_table sched_core_sysctls[] = {
 		.mode		= 0644,
 		.proc_handler	= sysctl_numa_balancing,
 		.extra1		= SYSCTL_ZERO,
-		.extra2		= SYSCTL_FOUR,
+		.extra2		= SYSCTL_ONE_HUNDRED,
 	},
 #endif /* CONFIG_NUMA_BALANCING */
 	{}
