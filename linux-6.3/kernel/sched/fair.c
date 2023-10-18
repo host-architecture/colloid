@@ -1700,6 +1700,7 @@ if yes, returns nid of destination node
 otherwise returns NUMA_NO_NODE
 */
 int numa_migrate_memory_away_target(struct page *page, int src_nid) {
+	// TODO: add condition to ignore mlocked / unevictable pages
 	if(!(sysctl_numa_balancing_mode & NUMA_BALANCING_MEMORY_TIERING &&
 	     sysctl_numa_balancing_mode & NUMA_BALANCING_COLLOID))
 		 return NUMA_NO_NODE;

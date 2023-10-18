@@ -156,6 +156,8 @@ static long change_pte_range(struct mmu_gather *tlb,
 				 * Don't mess with PTEs if page is already on the node
 				 * a single-threaded process is running on.
 				 */
+				// TODO: Update this for colloid; want hint faults even for single-threaded process
+				// TODO: After making this update, make sure to test with mlocked memory
 				nid = page_to_nid(page);
 				if (target_node == nid)
 					continue;

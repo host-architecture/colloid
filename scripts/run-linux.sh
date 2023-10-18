@@ -33,7 +33,7 @@ echo 6 > /proc/sys/kernel/numa_balancing
 
 # Run GUPS in isolation
 echo "Running $config-iso"
-$gups_path/$gups_workload $gups_cores > $stats_path/$config-iso.gups.txt 2>&1 &
+$gups_path/$gups_workload $gups_cores manual 0.2 distribute reset > $stats_path/$config-iso.gups.txt 2>&1 &
 pid_gups=$!;
 taskset -c 0 $record_path/record_stats > $stats_path/$config-iso.stats.txt 2>&1 &
 pid_stats=$!;

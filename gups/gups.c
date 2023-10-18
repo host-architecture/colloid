@@ -102,13 +102,7 @@ void *thread_function(void *arg) {
             asm volatile("" : : : "memory");
         }
     } else {
-        // memset(a, 'm', args->buf_size);
-        // TODO: Temporarily testing with hot data in local
-        // WARNING: Remove
-        for(char *p = a + args->buf_size-1; p >= a; p--) {
-            *p = 'm';
-            asm volatile("" : : : "memory");
-        }
+        memset(a, 'm', args->buf_size);
     }
 
     asm volatile("" : : : "memory");

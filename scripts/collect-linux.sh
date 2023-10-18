@@ -1,6 +1,6 @@
 #!/bin/bash
 
-config="colloidmtbg3-colloidv3-gupsrw"
+config="colloidv3-test4-gupsrw"
 gups_path=/home/midhul/colloid/gups
 mio_path=/home/midhul/mio-colloid
 record_path=/home/midhul/colloid/colloid-stats
