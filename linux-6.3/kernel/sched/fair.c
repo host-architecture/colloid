@@ -26,6 +26,7 @@
 #include <linux/jiffies.h>
 #include <linux/mm_api.h>
 #include <linux/highmem.h>
+#include <linux/swap.h>
 #include <linux/spinlock_api.h>
 #include <linux/cpumask_api.h>
 #include <linux/lockdep_api.h>
@@ -1711,8 +1712,11 @@ int numa_migrate_memory_away_target(struct page *page, int src_nid) {
 
 	// Local memory is congested
 
-	// Want to demote hot pages
-	// TODO: Add condition that checks if page is in active list
+	// Do not move pages that are not in the active list
+	if(!PageActive(page)) {
+		mark_page_accessed(page);
+		return NUMA_NO_NODE;
+	}
 
 	return next_demotion_node(src_nid);
 

@@ -2565,7 +2565,6 @@ int mpol_misplaced(struct page *page, struct vm_area_struct *vma, unsigned long 
 	int thiscpu = raw_smp_processor_id();
 	int thisnid = cpu_to_node(thiscpu);
 	int polnid = NUMA_NO_NODE;
-	int altnid = NUMA_NO_NODE;
 	int ret = NUMA_NO_NODE;
 
 	pol = get_vma_policy(vma, addr);
@@ -2617,21 +2616,11 @@ int mpol_misplaced(struct page *page, struct vm_area_struct *vma, unsigned long 
 		BUG();
 	}
 
-	
+	/* Migrate the page towards the node whose CPU is referencing it */
 	if (pol->flags & MPOL_F_MORON) {
-		polnid = NUMA_NO_NODE;
-		/* Migrate the page towards the node whose CPU is referencing it */
-		if (should_numa_migrate_memory(current, page, curnid, thiscpu))
-			polnid = thisnid;
-		
-		/*colloid: migrate page away from local numa node due to congestion*/
-		if(curnid == thisnid) {
-			altnid = numa_migrate_memory_away_target(page, curnid);
-			if(altnid != NUMA_NO_NODE)
-				polnid = altnid;
-		}
-			
-		if(polnid == NUMA_NO_NODE)
+		polnid = thisnid;
+
+		if (!should_numa_migrate_memory(current, page, curnid, thiscpu))
 			goto out;
 	}
 

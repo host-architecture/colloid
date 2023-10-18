@@ -4734,6 +4734,13 @@ static vm_fault_t do_numa_page(struct vm_fault *vmf)
 		last_cpupid = page_cpupid_last(page);
 	target_nid = numa_migrate_prep(page, vma, vmf->address, page_nid,
 			&flags);
+	/*
+	colloid
+	Move pages away from local NUMA is congested
+	*/
+	if(page_nid == numa_node_id() && target_nid == NUMA_NO_NODE) {
+		target_nid = numa_migrate_memory_away_target(page, page_nid);
+	}
 	if (target_nid == NUMA_NO_NODE) {
 		put_page(page);
 		goto out_map;

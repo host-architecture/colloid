@@ -39,6 +39,7 @@ __used __section("__versions") = {
 	{ 0x23d1b90, "wrmsr_on_cpu" },
 	{ 0x20ba4f3e, "rdmsr_on_cpu" },
 	{ 0xc5b6f236, "queue_work_on" },
+	{ 0xa837590d, "colloid_nid_of_interest" },
 	{ 0xa19b956, "__stack_chk_fail" },
 	{ 0xd5bd3839, "colloid_local_lat_gt_remote" },
 	{ 0xbe617108, "module_layout" },
@@ -47,4 +48,4 @@ __used __section("__versions") = {
 MODULE_INFO(depends, "");
 
 
-MODULE_INFO(srcversion, "462850277D8A618C30B222A");
+MODULE_INFO(srcversion, "DEE7F335059C22256AD4C08");

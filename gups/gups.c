@@ -56,6 +56,7 @@ typedef struct {
     _Atomic uint64_t *count_ptr;
     int manual_placement;
     size_t local_hot_pages;
+    int reset_mbind;
 } ThreadArgs;
 
 void *thread_function(void *arg) {
@@ -101,8 +102,27 @@ void *thread_function(void *arg) {
             asm volatile("" : : : "memory");
         }
     } else {
-        memset(a, 'm', args->buf_size);
+        // memset(a, 'm', args->buf_size);
+        // TODO: Temporarily testing with hot data in local
+        // WARNING: Remove
+        for(char *p = a + args->buf_size-1; p >= a; p--) {
+            *p = 'm';
+            asm volatile("" : : : "memory");
+        }
     }
+
+    asm volatile("" : : : "memory");
+    
+    if(args->manual_placement && args->reset_mbind) {
+        // reset mbind policy to default
+        if(mbind(a, args->buf_size, MPOL_DEFAULT, NULL, 0, 0) != 0) {
+                fprintf(stderr, "reset mbind failed\n");
+                return NULL;
+        }
+        fprintf(stderr, "resent mbind\n");
+    }
+
+    asm volatile("" : : : "memory");
     
 
     // Prevent compiler reordering
@@ -268,7 +288,7 @@ int main(int argc, char *argv[]) {
     setbuf(stdout, NULL);
     int cores[8] = {3,7,11,15,19,23,27,31};
     if (argc < 2) {
-        fprintf(stderr, "Usage: %s <num_threads> [manual] [fraction of hotset in local] [distribute/localize]\n", argv[0]);
+        fprintf(stderr, "Usage: %s <num_threads> [manual] [fraction of hotset in local] [distribute/localize] [reset]\n", argv[0]);
         return 1;
     }
 
@@ -281,13 +301,14 @@ int main(int argc, char *argv[]) {
     int manual_placement = 0;
     float hotset_local_frac = 0.0;
     int placement_mode = 0;
+    int reset_mbind = 0;
     enum {
         PLACEMENT_DISTRIBUTE,
         PLACEMENT_LOCALIZE
     };
     if(argc >= 3 && strncmp(argv[2], "manual", sizeof("manual")) == 0) {
         if(argc < 5) {
-            fprintf(stderr, "Usage: %s <num_threads> [manual] [fraction of hotset in local] [distribute/localize]\n", argv[0]);
+            fprintf(stderr, "Usage: %s <num_threads> [manual] [fraction of hotset in local] [distribute/localize] [reset]\n", argv[0]);
             return 1;
         }
         manual_placement = 1;
@@ -299,6 +320,9 @@ int main(int argc, char *argv[]) {
         } else {
             fprintf(stderr, "Unknown manual placement mode\n");
             return 1;
+        }
+        if(argc >= 6 && strncmp(argv[5], "reset", sizeof("reset")) == 0) {
+            reset_mbind = 1;
         }
     }
 
@@ -344,6 +368,7 @@ int main(int argc, char *argv[]) {
         atomic_init(&thread_counts[i], 0);
         thread_args[i].count_ptr = &thread_counts[i];
         thread_args[i].manual_placement = manual_placement;
+        thread_args[i].reset_mbind = reset_mbind;
         
         CPU_ZERO(&cpuset);
         CPU_SET(cores[i], &cpuset);

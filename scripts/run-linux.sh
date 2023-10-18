@@ -29,7 +29,7 @@ cleanup;
 # Make sure tiering is enabled
 swapoff -a
 echo 1 > /sys/kernel/mm/numa/demotion_enabled
-echo 2 > /proc/sys/kernel/numa_balancing
+echo 6 > /proc/sys/kernel/numa_balancing
 
 # Run GUPS in isolation
 echo "Running $config-iso"
@@ -48,23 +48,23 @@ while kill -0 $pid_gups; do
 done;
 
 # Run GUPS with background traffic
-echo "Running $config-bg"
-PYTHONPATH=$PYTHONPATH:$mio_path python3 -m mio $config-bg --ant_cpus $stream_core_list --ant_num_cores $stream_num_cores --ant_mem_numa 3 --ant stream --ant_writefrac 50 --ant_inst_size 64 --ant_duration $(($duration+20)) &
-pid_mio=$!;
-sleep 10;
-$gups_path/$gups_workload $gups_cores > $stats_path/$config-bg.gups.txt 2>&1 &
-pid_gups=$!;
-taskset -c 0 $record_path/record_stats > $stats_path/$config-bg.stats.txt 2>&1 &
-pid_stats=$!;
-sleep $duration;
-killall record_stats;
-while kill -0 $pid_stats; do
-    sleep 1;
-done;
-killall $gups_workload;
-while kill -0 $pid_gups; do
-    sleep 1;
-done;
-wait $pid_mio;
+# echo "Running $config-bg"
+# PYTHONPATH=$PYTHONPATH:$mio_path python3 -m mio $config-bg --ant_cpus $stream_core_list --ant_num_cores $stream_num_cores --ant_mem_numa 3 --ant stream --ant_writefrac 50 --ant_inst_size 64 --ant_duration $(($duration+20)) &
+# pid_mio=$!;
+# sleep 10;
+# $gups_path/$gups_workload $gups_cores > $stats_path/$config-bg.gups.txt 2>&1 &
+# pid_gups=$!;
+# taskset -c 0 $record_path/record_stats > $stats_path/$config-bg.stats.txt 2>&1 &
+# pid_stats=$!;
+# sleep $duration;
+# killall record_stats;
+# while kill -0 $pid_stats; do
+#     sleep 1;
+# done;
+# killall $gups_workload;
+# while kill -0 $pid_gups; do
+#     sleep 1;
+# done;
+# wait $pid_mio;
 
 echo "Done";
