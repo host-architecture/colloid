@@ -1,6 +1,6 @@
 #!/bin/bash
 
-config="colloidmtlatbg3-manual-gupsrw"
+config="linux-robust-gupsrw"
 gups_path=/home/midhul/colloid/gups
 mio_path=/home/midhul/mio-colloid
 record_path=/home/midhul/colloid/colloid-stats

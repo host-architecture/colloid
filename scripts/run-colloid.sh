@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# Make sure memory tiering is enabled
-
 config=$1
 gups_path=/home/midhul/colloid/gups
 mio_path=/home/midhul/mio-colloid
@@ -19,6 +17,7 @@ function cleanup() {
     killall record_stats;
     killall stream;
     killall python3;
+    killall bpftrace;
     echo "Cleaned up";
 }
 
@@ -26,10 +25,19 @@ trap cleanup EXIT
 
 cleanup;
 
-# Make sure tiering is enabled
+# Make sure colloid-mon kernel module is loaded
+if ! lsmod | grep -q "colloid_mon"; then
+    echo "colloid-mon not loaded";
+    exit 1;
+fi
+
+addr_local=$(cat /proc/kallsyms | grep smoothed_occ_local | awk '{print "0x"$1}')
+addr_remote=$(cat /proc/kallsyms | grep smoothed_occ_remote | awk '{print "0x"$1}')
+
+# Make sure tiering + colloid is enabled
 swapoff -a
 echo 1 > /sys/kernel/mm/numa/demotion_enabled
-echo 2 > /proc/sys/kernel/numa_balancing
+echo 6 > /proc/sys/kernel/numa_balancing
 
 # Run GUPS in isolation
 echo "Running $config-iso"
@@ -37,7 +45,13 @@ $gups_path/$gups_workload $gups_cores > $stats_path/$config-iso.gups.txt 2>&1 &
 pid_gups=$!;
 taskset -c 0 $record_path/record_stats > $stats_path/$config-iso.stats.txt 2>&1 &
 pid_stats=$!;
+bpftrace -e "BEGIN {@start = nsecs;} interval:s:1 {printf(\"%ld, colloid_local_lat_gt_remote: %d, local: %lu, remote: %lu\n\", (nsecs-@start)/1e9, *kaddr(\"colloid_local_lat_gt_remote\"), *($addr_local), *($addr_remote));}" > $stats_path/$config-iso.mon.txt 2>&1 &
+pid_bpf=$!;
 sleep $duration;
+killall bpftrace;
+while kill -0 $pid_bpf; do
+    sleep 1;
+done;
 killall record_stats;
 while kill -0 $pid_stats; do
     sleep 1;
