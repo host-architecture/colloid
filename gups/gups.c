@@ -23,12 +23,16 @@
 
 // #define WSS 103079215104ULL
 #define WSS 77309411328ULL
-#define HOTSS 25769803776ULL
+//#define HOTSS 25769803776ULL
+#define HOTSS 21474836480ULL
 // #define WSS 2147483648ULL
 // #define HOTSS 1073741824ULL
+#define CHUNK_SIZE 4096
 
 int TSC_ratio;
 uint64_t begin_ts;
+
+size_t pg_size;
 
 static inline __attribute__((always_inline)) unsigned long rdtsc()
 {
@@ -62,7 +66,11 @@ typedef struct {
 void *thread_function(void *arg) {
     ThreadArgs *args = (ThreadArgs *)arg;
     // char *a = (char *)malloc(args->buf_size);
-    char *a = mmap(0, args->buf_size, PROT_READ | PROT_WRITE, MAP_PRIVATE |  MAP_ANONYMOUS, -1, 0);
+    int mmap_flags =  MAP_PRIVATE |  MAP_ANONYMOUS;
+    if(getenv("GUPS_HUGEPAGES") != NULL) {
+        mmap_flags |= MAP_HUGETLB;
+    }
+    char *a = mmap(0, args->buf_size, PROT_READ | PROT_WRITE, mmap_flags, -1, 0);
     if(a == NULL) {
         printf("mmap failed\n");
         return NULL;
@@ -81,12 +89,12 @@ void *thread_function(void *arg) {
         // }
         // Setting mbind policy only for hot set. cold set will be allocated in remaining space
         if(args->local_hot_pages > 0){
-            if(mbind(a + args->buf_size - args->hot_size, args->local_hot_pages*4096, MPOL_BIND, &local_nodemask, sizeof(local_nodemask)*8, MPOL_MF_STRICT) != 0) {
+            if(mbind(a + args->buf_size - args->hot_size, args->local_hot_pages*pg_size, MPOL_BIND, &local_nodemask, sizeof(local_nodemask)*8, MPOL_MF_STRICT) != 0) {
                 fprintf(stderr, "second mbind failed\n");
                 return NULL;
             }
         }
-        if(mbind(a + args->buf_size - args->hot_size + args->local_hot_pages*4096, args->hot_size - args->local_hot_pages*4096, MPOL_BIND, &remote_nodemask, sizeof(remote_nodemask)*8, MPOL_MF_STRICT) != 0) {
+        if(mbind(a + args->buf_size - args->hot_size + args->local_hot_pages*pg_size, args->hot_size - args->local_hot_pages*pg_size, MPOL_BIND, &remote_nodemask, sizeof(remote_nodemask)*8, MPOL_MF_STRICT) != 0) {
             fprintf(stderr, "third mbind failed\n");
             return NULL;
         }
@@ -194,17 +202,17 @@ void *thread_function(void *arg) {
             if(x%100 < 90) {
                 // access hot region
                 start = a + (args->buf_size - args->hot_size);
-                slots = args->hot_size / 4096;
+                slots = args->hot_size / CHUNK_SIZE;
             } else {
                 start = a;
-                slots = (args->buf_size - args->hot_size)/4096;
+                slots = (args->buf_size - args->hot_size)/CHUNK_SIZE;
             }
 
             // access random slot
             x ^= x << 13;
             x ^= x >> 7;
             x ^= x << 17;
-            char *chunk = start + 4096*(x%slots);
+            char *chunk = start + CHUNK_SIZE*(x%slots);
             // printf("a: %p\n", a);
             // printf("chunk: %p\n", chunk);
             int k;
@@ -279,6 +287,10 @@ void *thread_function(void *arg) {
 }
 
 int main(int argc, char *argv[]) {
+    pg_size = 4096ULL;
+    if(getenv("GUPS_HUGEPAGES") != NULL) {
+        pg_size = 2ULL*1024ULL*1024ULL;
+    }
     setbuf(stdout, NULL);
     int cores[8] = {3,7,11,15,19,23,27,31};
     if (argc < 2) {
@@ -339,11 +351,11 @@ int main(int argc, char *argv[]) {
 
     if(manual_placement && placement_mode == PLACEMENT_DISTRIBUTE) {
         for(int i = 0; i < num_threads; i++) {
-            thread_args[i].local_hot_pages = (int)(hotset_local_frac*((HOTSS/4096ULL)/((size_t)num_threads)));
+            thread_args[i].local_hot_pages = (int)(hotset_local_frac*((HOTSS/pg_size)/((size_t)num_threads)));
         }
     } else if(manual_placement && placement_mode == PLACEMENT_LOCALIZE) {
-        size_t total_local_pages = (int)(hotset_local_frac*(HOTSS/4096ULL));
-        size_t per_thread_hot_pages = ((HOTSS/4096ULL)/((size_t)num_threads));
+        size_t total_local_pages = (int)(hotset_local_frac*(HOTSS/pg_size));
+        size_t per_thread_hot_pages = ((HOTSS/pg_size)/((size_t)num_threads));
         for(int i = 0; i < num_threads; i++) {
             if(total_local_pages > 0){
                 size_t num_pages = (total_local_pages < per_thread_hot_pages)?(total_local_pages):(per_thread_hot_pages);
@@ -357,8 +369,8 @@ int main(int argc, char *argv[]) {
 
     for (int i = 0; i < num_threads; ++i) {
         thread_args[i].thread_id = i;
-        thread_args[i].buf_size = ((WSS/4096ULL)/((size_t)num_threads))*4096ULL;
-        thread_args[i].hot_size = ((HOTSS/4096ULL)/((size_t)num_threads))*4096ULL;
+        thread_args[i].buf_size = ((WSS/pg_size)/((size_t)num_threads))*pg_size;
+        thread_args[i].hot_size = ((HOTSS/pg_size)/((size_t)num_threads))*pg_size;
         atomic_init(&thread_counts[i], 0);
         thread_args[i].count_ptr = &thread_counts[i];
         thread_args[i].manual_placement = manual_placement;
