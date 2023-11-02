@@ -9,6 +9,9 @@
 #./run-manual-lat.sh colloidlat-manual-gupsr gups-r
 #./run-manual-lat.sh colloidlat-manual-gupsrw gups-rw
 
-./run-linux.sh colloidmtbg3-colloidv3-gupsrw gups-rw
-./run-linux.sh colloidmtbg3-colloidv3-gupsr gups-r
+#./run-linux.sh colloidmtbg3-colloidv3-gupsrw gups-rw
+#./run-linux.sh colloidmtbg3-colloidv3-gupsr gups-r
+
+./run-manual.sh hugepages-manual-gupsr gups-r
+./run-manual.sh hugepages-manual-gupsrw gups-rw
 
