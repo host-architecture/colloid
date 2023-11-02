@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# TODO: Make sure to switch to gcc version 8 for compiling HeMem kernel and HeMem
 # Make sure /dev/dax devices are setup and HeMem + Hoard libraries are compiled
 # TODO: Make sure to run run_perf.sh script from hemem directory in background
 # Dump of command lines from example run
