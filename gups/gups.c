@@ -29,8 +29,8 @@
 // #define HOTSS 1073741824ULL
 #define CHUNK_SIZE 4096
 
-int TSC_ratio;
-uint64_t begin_ts;
+// int TSC_ratio;
+// uint64_t begin_ts;
 
 size_t pg_size;
 
@@ -61,6 +61,7 @@ typedef struct {
     int manual_placement;
     size_t local_hot_pages;
     int reset_mbind;
+    _Atomic int finish;
 } ThreadArgs;
 
 void *thread_function(void *arg) {
@@ -230,6 +231,9 @@ void *thread_function(void *arg) {
             count++;
         }
         atomic_store(args->count_ptr, count);
+        if(atomic_load(&(args->finish))) {
+            return NULL;
+        }
         // cur_ts = rdtscp();
         // printf("cur_ts: %lu, prev_ts: %lu\n", cur_ts, prev_ts);
         // if(cur_ts - prev_ts >= LOG_INTERVAL_MS*TSC_ratio*100*1e3) {
@@ -333,16 +337,16 @@ int main(int argc, char *argv[]) {
     }
 
     // Get TSC frequency
-    int msr_fd;
-    ssize_t ret;
-    uint64_t msr_val;
-    msr_fd = open("/dev/cpu/0/msr", O_RDWR);
-    if(msr_fd == -1) {
-        fprintf(stderr, "An error occurred while opening msr file.\n");
-		return EXIT_FAILURE;
-    }
-    ret = pread(msr_fd, &msr_val, sizeof(msr_val), 0xCEL);
-    TSC_ratio = (msr_val & 0x000000000000ff00L) >> 8;
+    // int msr_fd;
+    // ssize_t ret;
+    // uint64_t msr_val;
+    // msr_fd = open("/dev/cpu/0/msr", O_RDWR);
+    // if(msr_fd == -1) {
+    //     fprintf(stderr, "An error occurred while opening msr file.\n");
+	// 	return EXIT_FAILURE;
+    // }
+    // ret = pread(msr_fd, &msr_val, sizeof(msr_val), 0xCEL);
+    // TSC_ratio = (msr_val & 0x000000000000ff00L) >> 8;
 
     _Atomic uint64_t thread_counts[MAX_THREADS];
     pthread_t threads[MAX_THREADS];
@@ -375,6 +379,7 @@ int main(int argc, char *argv[]) {
         thread_args[i].count_ptr = &thread_counts[i];
         thread_args[i].manual_placement = manual_placement;
         thread_args[i].reset_mbind = reset_mbind;
+        atomic_init(&(thread_args[i].finish), 0);
         
         CPU_ZERO(&cpuset);
         CPU_SET(cores[i], &cpuset);
@@ -391,7 +396,12 @@ int main(int argc, char *argv[]) {
     }
 
     uint64_t prev_op_count = 0;
-    while(1) {
+    int elapsed = 0;
+    int max_duration = 100000;
+    if(getenv("GUPS_DURATION") != NULL) {
+        max_duration = atoi(getenv("GUPS_DURATION"));
+    }
+    while(elapsed < max_duration) {
         sleep(1);
         uint64_t cur_op_count = 0;
         for(int i = 0; i < num_threads; i++) {
@@ -399,6 +409,11 @@ int main(int argc, char *argv[]) {
         }
         printf("%lu\n", cur_op_count - prev_op_count);
         prev_op_count = cur_op_count;
+        elapsed++;
+    }
+
+    for(int i = 0; i < num_threads; i++) {
+        atomic_store(&(thread_args[i].finish), 1);
     }
 
     for (int i = 0; i < num_threads; ++i) {

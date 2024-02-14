@@ -1,1 +1,1 @@
-savedcmd_/home/midhul/colloid/colloid-mon/Module.symvers :=  scripts/mod/modpost -m -a     -o /home/midhul/colloid/colloid-mon/Module.symvers -T /home/midhul/colloid/colloid-mon/modules.order -i Module.symvers -e 
+cmd_/home/midhul/colloid/colloid-mon/Module.symvers := sed 's/\.ko$$/\.o/' /home/midhul/colloid/colloid-mon/modules.order | scripts/mod/modpost -m -a  -o /home/midhul/colloid/colloid-mon/Module.symvers -e -i Module.symvers   -T -

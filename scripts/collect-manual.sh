@@ -1,6 +1,6 @@
 #!/bin/bash
 
-config="hugepages-manual-gupsr"
+config="hugepageslat-manual-gupsrw"
 gups_path=/home/midhul/colloid/gups
 mio_path=/home/midhul/mio-colloid
 record_path=/home/midhul/colloid/colloid-stats
@@ -8,12 +8,12 @@ stats_path=/home/midhul/membw-eval
 
 echo "App Throughput, no background traffic"
 for x in 0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1; do
-    cat $stats_path/$config-iso-x$x.gups.txt | tail -n 30 | awk '{sum+=$1} END {print (sum/NR)*4096/1e9;}'
+    cat $stats_path/$config-iso-x$x.gups.txt | tail -n 30 | awk '{sum+=$1} END {print (sum/NR)*2*4096/1e9;}'
 done;
 
 echo "App Throughput, with background traffic"
 for x in 0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1; do
-    cat $stats_path/$config-bg-x$x.gups.txt | tail -n 30 | awk '{sum+=$1} END {print (sum/NR)*4096/1e9;}'
+    cat $stats_path/$config-bg-x$x.gups.txt | tail -n 30 | awk '{sum+=$1} END {print (sum/NR)*2*4096/1e9;}'
 done;
 
 # Local DRAM BW usage

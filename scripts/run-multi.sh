@@ -12,6 +12,9 @@
 #./run-linux.sh colloidmtbg3-colloidv3-gupsrw gups-rw
 #./run-linux.sh colloidmtbg3-colloidv3-gupsr gups-r
 
-./run-manual.sh hugepages-manual-gupsr gups-r
-./run-manual.sh hugepages-manual-gupsrw gups-rw
+# ./run-manual.sh hugepages-manual-gupsr gups-r
+# ./run-manual.sh hugepages-manual-gupsrw gups-rw
+
+./run-manual-lat.sh hugepageslat-manual-gupsr gups-r
+./run-manual-lat.sh hugepageslat-manual-gupsrw gups-rw
 

@@ -6,8 +6,16 @@
 #include <linux/slab.h>
 #include <linux/version.h>
 #include <linux/mm.h>
-#include <linux/memory-tiers.h>
+//#include <linux/memory-tiers.h>
 #include <linux/delay.h>
+
+// #define SPINPOLL // TODO: configure this
+#define SAMPLE_INTERVAL_MS 10 // Only used if SPINPOLL is not set
+#ifdef SPINPOLL
+#define EWMA_EXP 5
+#else
+#define EWMA_EXP 1
+#endif
 
 extern int colloid_local_lat_gt_remote;
 extern int colloid_nid_of_interest;
@@ -41,8 +49,14 @@ u64 smoothed_occ_local, smoothed_inserts_local;
 u64 smoothed_occ_remote, smoothed_inserts_remote;
 u64 smoothed_lat_local, smoothed_lat_remote;
 
+void thread_fun_poll_cha(struct work_struct *);
 struct workqueue_struct *poll_cha_queue;
+#ifdef SPINPOLL
 struct work_struct poll_cha;
+#else
+DECLARE_DELAYED_WORK(poll_cha, thread_fun_poll_cha);
+#endif
+
 u64 cur_ctr_tsc[NUM_CHA_BOXES][NUM_CHA_COUNTERS], prev_ctr_tsc[NUM_CHA_BOXES][NUM_CHA_COUNTERS];
 u64 cur_ctr_val[NUM_CHA_BOXES][NUM_CHA_COUNTERS], prev_ctr_val[NUM_CHA_BOXES][NUM_CHA_COUNTERS];
 int terminate_mon;
@@ -135,7 +149,11 @@ static void dump_log(void) {
 
 void thread_fun_poll_cha(struct work_struct *work) {
     int cpu = CORE_MON;
+    #ifdef SPINPOLL
     u32 budget = WORKER_BUDGET;
+    #else
+    u32 budget = 1;
+    #endif
     u64 cum_occ, delta_tsc, cur_occ, cur_inserts;
     u64 cur_lat_local, cur_lat_remote;
     
@@ -151,8 +169,8 @@ void thread_fun_poll_cha(struct work_struct *work) {
         delta_tsc = cur_ctr_tsc[0][0] - prev_ctr_tsc[0][0];
         cur_occ = (cum_occ << 20)/delta_tsc;
         cur_inserts = (cur_ctr_val[0][1] - prev_ctr_val[0][1])<<10;
-        WRITE_ONCE(smoothed_occ_local, (cur_occ + 31*smoothed_occ_local)>>5);
-        WRITE_ONCE(smoothed_inserts_local, (cur_inserts + 31*smoothed_inserts_local)>>5);
+        WRITE_ONCE(smoothed_occ_local, (cur_occ + ((1<<EWMA_EXP) - 1)*smoothed_occ_local)>>EWMA_EXP);
+        WRITE_ONCE(smoothed_inserts_local, (cur_inserts + ((1<<EWMA_EXP) - 1)*smoothed_inserts_local)>>EWMA_EXP);
         cur_lat_local = (smoothed_inserts_local > 0)?(smoothed_occ_local/smoothed_inserts_local):(MIN_LOCAL_LAT);
         cur_lat_local = (cur_lat_local > MIN_LOCAL_LAT)?(cur_lat_local):(MIN_LOCAL_LAT);
         WRITE_ONCE(smoothed_lat_local, cur_lat_local);
@@ -165,8 +183,8 @@ void thread_fun_poll_cha(struct work_struct *work) {
         delta_tsc = cur_ctr_tsc[1][0] - prev_ctr_tsc[1][0];
         cur_occ = (cum_occ << 20)/delta_tsc;
         cur_inserts = (cur_ctr_val[1][1] - prev_ctr_val[1][1])<<10;
-        WRITE_ONCE(smoothed_occ_remote, (cur_occ + 31*smoothed_occ_remote)>>5);
-        WRITE_ONCE(smoothed_inserts_remote, (cur_inserts + 31*smoothed_inserts_remote)>>5);
+        WRITE_ONCE(smoothed_occ_remote, (cur_occ + ((1<<EWMA_EXP) - 1)*smoothed_occ_remote)>>EWMA_EXP);
+        WRITE_ONCE(smoothed_inserts_remote, (cur_inserts + ((1<<EWMA_EXP) - 1)*smoothed_inserts_remote)>>EWMA_EXP);
         cur_lat_remote = (smoothed_inserts_remote > 0)?(smoothed_occ_remote/smoothed_inserts_remote):(MIN_REMOTE_LAT);
         WRITE_ONCE(smoothed_lat_remote, (cur_lat_remote > MIN_REMOTE_LAT)?(cur_lat_remote):(MIN_REMOTE_LAT));
         // log_buffer[log_idx].occ_remote = cur_occ;
@@ -179,7 +197,11 @@ void thread_fun_poll_cha(struct work_struct *work) {
         budget--;
     }
     if(!READ_ONCE(terminate_mon)){
+        #ifdef SPINPOLL
         queue_work_on(cpu, poll_cha_queue, &poll_cha);
+        #else
+        queue_delayed_work_on(cpu, poll_cha_queue, &poll_cha, msecs_to_jiffies(SAMPLE_INTERVAL_MS));
+        #endif
     }
     else{
         return;
@@ -206,20 +228,28 @@ static int colloidmon_init(void)
         return -ENOMEM;
     }
 
+    #ifdef SPINPOLL
     INIT_WORK(&poll_cha, thread_fun_poll_cha);
+    #else
+    INIT_DELAYED_WORK(&poll_cha, thread_fun_poll_cha);
+    #endif
     poll_cha_init();
     pr_info("Programmed counters");
     // Initialize state
     init_mon_state();
     WRITE_ONCE(terminate_mon, 0);
+    #ifdef SPINPOLL
     queue_work_on(CORE_MON, poll_cha_queue, &poll_cha);
+    #else
+    queue_delayed_work_on(CORE_MON, poll_cha_queue, &poll_cha, msecs_to_jiffies(SAMPLE_INTERVAL_MS));
+    #endif
 
     WRITE_ONCE(colloid_nid_of_interest, LOCAL_NUMA);
 
     int i;
     for(i = 0; i < 60; i++) {
         msleep(1000);
-        printk("%llu %llu\n", READ_ONCE(smoothed_lat_local), READ_ONCE(smoothed_lat_remote));
+        printk("%llu %llu\n", READ_ONCE(smoothed_occ_local), READ_ONCE(smoothed_occ_remote));
     }
     
     return 0;
