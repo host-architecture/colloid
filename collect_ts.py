@@ -3,6 +3,16 @@ import argparse
 
 STATS_PATH = '/home/midhul/membw-eval'
 
+def load_gups(d, filepath):
+    with open(filepath, 'r') as f:
+        if 'gups' not in d:
+            d['gups'] = []
+        for line in f:
+            if 'Total' in line:
+                continue
+            d['gups'].append(float(line.strip()))
+
+
 def load_colloid(d, filepath):
     with open(filepath, 'r') as f:
         for line in f:
@@ -37,6 +47,10 @@ d = {}
 filepath= os.path.join(STATS_PATH, args.config + '.hemem-colloid.log')
 if os.path.isfile(filepath):
     load_colloid(d, filepath)
+
+filepath= os.path.join(STATS_PATH, args.config + '.app.txt')
+if os.path.isfile(filepath):
+    load_gups(d, filepath)
 
 cols = args.columns.split(',')
 res = []
