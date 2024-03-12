@@ -10,7 +10,7 @@
 
 config=$1
 # gups_path=/home/midhul/colloid/gups
-mio_path=/home/midhul/mio-colloid
+mio_path=/home/midhul/mio
 record_path=/home/midhul/colloid/colloid-stats
 stats_path=/home/midhul/membw-eval
 lib_path="/home/midhul/hemem/src:/home/midhul/hemem/Hoard/src"
@@ -19,8 +19,13 @@ perfsh_path="/home/midhul/hemem/run_perf.sh"
 # gups_workload=$2
 # gups_cores=4
 # stream_num_cores=3
-# stream_core_list="19,23,27,31"
 duration=$2
+app_cores=$3
+bg_cores=$4
+
+all_core_list="1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31,33,35,37,39,41,43,45,47,49,51,53,55,57,59"
+bg_core_list=$(echo "$all_core_list" | cut -d ',' -f $((app_cores + 1))-)
+echo $bg_core_list
 
 index=0
 for arg in "$@"; do
@@ -41,6 +46,8 @@ function cleanup() {
         kill -9 $pid;
     done;
     killall perf
+    killall python3
+    killall stream
     echo "Cleaned up";
 }
 
@@ -57,6 +64,22 @@ pid_perf=$!;
 all_pids+=($pid_perf);
 sleep 3;
 
+mio_opts=( $MIO_STATS )
+
+if [ $bg_cores -gt 0 ]; then
+	echo "Running bg traffic on $bg_cores"
+	PYTHONPATH=$PYTHONPATH:$mio_path python3 -m mio $config-mio --ant_cpus $bg_core_list --ant_num_cores $bg_cores --ant_mem_numa 1 --ant stream --ant_writefrac 50 --ant_inst_size 64 --ant_duration 10000 "${mio_opts[@]}" &
+	pid_mio=$!;
+	all_pids+=($pid_mio);
+	sleep 7;
+elif [ "${#mio_opts[@]}" -gt 0 ]; then
+    echo "Running mio"
+    PYTHONPATH=$PYTHONPATH:$mio_path python3 -m mio $config-mio "${mio_opts[@]}" &
+    pid_mio=$!;
+	all_pids+=($pid_mio);
+	sleep 7;
+fi
+
 # run actual app
 echo "Running $config"
 LD_LIBRARY_PATH=$lib_path LD_PRELOAD=$hemem_lib "${args_after_double_dash[@]}" > $stats_path/$config.app.txt 2> $stats_path/$config.hemem.txt &
@@ -70,6 +93,15 @@ while kill -0 $pid_app; do
 done;
 
 head -n -1 /tmp/hemem-colloid.log > $stats_path/$config.hemem-colloid.log
+
+if [ $bg_cores -gt 0 ] || [ "${#mio_opts[@]}" -gt 0 ]; then
+	kill $pid_mio;
+	while kill -0 $pid_mio; do
+    		sleep 1;
+	done;
+	killall python3
+	killall stream
+fi
 
 kill $pid_perf;
 while kill -0 $pid_perf; do

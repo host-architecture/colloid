@@ -16,10 +16,10 @@
 #include <numaif.h>
 
 #define LOG_INTERVAL_MS 1000
-#define MAX_THREADS 8
+#define MAX_THREADS 32
 
-#define LOCAL_NUMA 3
-#define REMOTE_NUMA 2
+#define LOCAL_NUMA 1
+#define REMOTE_NUMA 0
 
 // #define WSS 103079215104ULL
 #define WSS 77309411328ULL
@@ -217,17 +217,44 @@ void *thread_function(void *arg) {
             // printf("a: %p\n", a);
             // printf("chunk: %p\n", chunk);
             int k;
+            #if defined(WORKLOAD_READWRITE)
             for(k = 0; k < 64; k++) {
-                #if defined(WORKLOAD_READWRITE)
                 __m512i mm_a = _mm512_load_si512(&chunk[64*k]);
-                _mm512_store_si512(&chunk[64*k], _mm512_add_epi32(mm_a, val));
-                #elif defined(WORKLOAD_READ)
+                _mm512_store_si512(&chunk[64*k], _mm512_add_epi32(mm_a, val)); 
+            }
+            #elif defined(WORKLOAD_READ)
+            for(k = 0; k < 64; k++) {
                 __m512i mm_a = _mm512_load_si512(&chunk[64*k]);
                 sum = _mm512_add_epi32(sum, mm_a);
-                #else
-                #error "Define WORKLOAD"
-                #endif
             }
+            #elif defined(WORKLOAD_2TO1)
+            if(count%2 == 0) {
+                for(k = 0; k < 64; k++) {
+                    __m512i mm_a = _mm512_load_si512(&chunk[64*k]);
+                    sum = _mm512_add_epi32(sum, mm_a);
+                }
+            } else {
+                for(k = 0; k < 64; k++) {
+                    __m512i mm_a = _mm512_load_si512(&chunk[64*k]);
+                    _mm512_store_si512(&chunk[64*k], _mm512_add_epi32(mm_a, val)); 
+                }
+            }
+            #elif defined(WORKLOAD_3TO1)
+            if(count%3 < 2) {
+                for(k = 0; k < 64; k++) {
+                    __m512i mm_a = _mm512_load_si512(&chunk[64*k]);
+                    sum = _mm512_add_epi32(sum, mm_a);
+                }
+            } else {
+                for(k = 0; k < 64; k++) {
+                    __m512i mm_a = _mm512_load_si512(&chunk[64*k]);
+                    _mm512_store_si512(&chunk[64*k], _mm512_add_epi32(mm_a, val)); 
+                }
+            }
+            #else
+                #error "Define WORKLOAD"
+            #endif
+
             count++;
         }
         atomic_store(args->count_ptr, count);
@@ -296,7 +323,7 @@ int main(int argc, char *argv[]) {
         pg_size = 2ULL*1024ULL*1024ULL;
     }
     setbuf(stdout, NULL);
-    int cores[8] = {3,7,11,15,19,23,27,31};
+    int cores[32] = {1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31,33,35,37,39,41,43,45,47,49,51,53,55,57,59,61,63};
     if (argc < 2) {
         fprintf(stderr, "Usage: %s <num_threads> [manual] [fraction of hotset in local] [distribute/localize] [reset]\n", argv[0]);
         return 1;

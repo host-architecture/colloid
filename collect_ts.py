@@ -8,7 +8,7 @@ def load_gups(d, filepath):
         if 'gups' not in d:
             d['gups'] = []
         for line in f:
-            if 'Total' in line:
+            if 'Total' in line or 'memset' in line:
                 continue
             d['gups'].append(float(line.strip()))
 

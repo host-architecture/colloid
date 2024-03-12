@@ -16,11 +16,11 @@
 #include <numaif.h>
 
 #define LOG_INTERVAL_MS 1000
-#define MAX_THREADS 8
+#define MAX_THREADS 32
 #define STATS_ITERATIONS 10
 
-#define LOCAL_NUMA 3
-#define REMOTE_NUMA 2
+#define LOCAL_NUMA 1
+#define REMOTE_NUMA 0
 
 // #define WSS 103079215104ULL
 #define WSS 77309411328ULL
@@ -218,7 +218,7 @@ int main(int argc, char *argv[]) {
     }
     size_t align_sz = (CHUNK_SIZE > pg_size)?(CHUNK_SIZE):(pg_size);
     setbuf(stdout, NULL);
-    int cores[8] = {3,7,11,15,19,23,27,31};
+    int cores[32] = {1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31,33,35,37,39,41,43,45,47,49,51,53,55,57,59,61,63};
     // int cores[8] = {1,5,9,13,17,21,25,29};
     if (argc < 4) {
         fprintf(stderr, "Usage: %s <num_threads> <nsamples> <distribution-file>\n", argv[0]);

@@ -8,10 +8,10 @@ FILENAME = 'dist.txt'
 
 dist='zipf'
 num_samples = 10000000
-num_threads = 4
+num_threads = 1
 step_size = 0 # L3 size is roughly 12 2MB pages
 step_factor = 3.0
-a = 2.0
+a = 1.0
 geom_p = 0.8
 
 buf_size = ((WSS//CHUNK_SIZE)//(num_threads))*CHUNK_SIZE
