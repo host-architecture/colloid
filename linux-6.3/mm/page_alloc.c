@@ -6502,8 +6502,8 @@ static void build_thisnode_zonelists(pg_data_t *pgdat)
 	zonerefs->zone_idx = 0;
 }
 
-#define COLLOID_LOCAL_NUMA 3
-#define COLLOID_REMOTE_NUMA 2
+#define COLLOID_LOCAL_NUMA 1
+#define COLLOID_REMOTE_NUMA 0
 
 /*
  * Build zonelists ordered by zone and nodes within zones.

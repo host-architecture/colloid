@@ -411,9 +411,6 @@ static int nvme_init_hctx(struct blk_mq_hw_ctx *hctx, void *data,
 {
 	struct nvme_dev *dev = to_nvme_dev(data);
 	struct nvme_queue *nvmeq = &dev->queues[hctx_idx + 1];
-	// TODO: Midhul: printing nvme queue field offsets
-	// pr_info("midhul: nvmeq addresses, nvmeq: %p, qid: %p, sq_tail: %p, containerof_qid: %p", nvmeq, &(nvmeq->qid), &(nvmeq->sq_tail), container_of(nvmeq->qid, struct nvme_queue, qid));
-	pr_info("midhul nvmeq offsets. qid: %lu, sq_tail: %lu", offsetof(struct nvme_queue, qid), offsetof(struct nvme_queue, sq_tail));
 
 	WARN_ON(dev->tagset.tags[hctx_idx] != hctx->tags);
 	hctx->driver_data = nvmeq;
