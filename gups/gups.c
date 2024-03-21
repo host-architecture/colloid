@@ -64,6 +64,8 @@ typedef struct {
     _Atomic int finish;
 } ThreadArgs;
 
+_Atomic int g_move_hotset;
+
 void *thread_function(void *arg) {
     ThreadArgs *args = (ThreadArgs *)arg;
     // char *a = (char *)malloc(args->buf_size);
@@ -193,6 +195,8 @@ void *thread_function(void *arg) {
     __m512i sum = _mm512_set_epi32(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
     __m512i val = _mm512_set_epi32(1995, 1995, 2002, 2002, 1995, 1995, 2002, 2002, 1995, 1995, 2002, 2002, 1995, 1995, 2002, 2002);
     int i;
+    char *hotset_start = a + (args->buf_size - args->hot_size);
+    char *coldset_start = a;
     while(count < 999999999999999ULL) {
         for(i = 0; i < 1024; i++) {
             char *start;
@@ -202,10 +206,10 @@ void *thread_function(void *arg) {
             x ^= x << 17;
             if(x%100 < 90) {
                 // access hot region
-                start = a + (args->buf_size - args->hot_size);
+                start = hotset_start;
                 slots = args->hot_size / CHUNK_SIZE;
             } else {
-                start = a;
+                start = coldset_start;
                 slots = (args->buf_size - args->hot_size)/CHUNK_SIZE;
             }
 
@@ -231,6 +235,10 @@ void *thread_function(void *arg) {
             count++;
         }
         atomic_store(args->count_ptr, count);
+        if(atomic_load(&(g_move_hotset))) {
+            hotset_start = a;
+            coldset_start = a + args->hot_size;
+        }
         if(atomic_load(&(args->finish))) {
             return NULL;
         }
@@ -336,6 +344,19 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    int move_hotset = 0;
+    int move_time = 0;
+
+    if(argc >= 3 && strncmp(argv[2], "move", sizeof("move")) == 0) {
+        if(argc < 4) {
+            fprintf(stderr, "Usage: %s <num_threads> [move] [move time]\n", argv[0]);
+            return 1;
+        }
+        move_hotset = 1;
+        move_time = atoi(argv[3]);
+    }
+    atomic_init(&g_move_hotset, 0);
+
     // Get TSC frequency
     // int msr_fd;
     // ssize_t ret;
@@ -410,6 +431,10 @@ int main(int argc, char *argv[]) {
         printf("%lu\n", cur_op_count - prev_op_count);
         prev_op_count = cur_op_count;
         elapsed++;
+        if(elapsed == move_time) {
+            printf("moved hotset\n");
+            atomic_store(&g_move_hotset, 1);
+        }
     }
 
     for(int i = 0; i < num_threads; i++) {
