@@ -1889,7 +1889,10 @@ int change_huge_pmd(struct mmu_gather *tlb, struct vm_area_struct *vma,
 		 * Skip scanning top tier node if normal numa
 		 * balancing is disabled
 		 */
+		 // Enable hint faults for top tier nodes in colloid
 		if (!(sysctl_numa_balancing_mode & NUMA_BALANCING_NORMAL) &&
+			!(sysctl_numa_balancing_mode & NUMA_BALANCING_COLLOID && 
+			  sysctl_numa_balancing_mode & NUMA_BALANCING_MEMORY_TIERING) &&
 		    toptier)
 			goto unlock;
 
