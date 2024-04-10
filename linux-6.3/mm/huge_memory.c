@@ -1546,6 +1546,14 @@ vm_fault_t do_huge_pmd_numa_page(struct vm_fault *vmf)
 	target_nid = numa_migrate_prep(page, vma, haddr, page_nid,
 				       &flags);
 
+	/*
+	colloid
+	Move pages away from local NUMA is congested
+	*/
+	if(page_nid == numa_node_id() && target_nid == NUMA_NO_NODE) {
+		target_nid = numa_migrate_memory_away_target(page, page_nid);
+	}
+
 	if (target_nid == NUMA_NO_NODE) {
 		put_page(page);
 		goto out_map;
@@ -1896,8 +1904,10 @@ int change_huge_pmd(struct mmu_gather *tlb, struct vm_area_struct *vma,
 		    toptier)
 			goto unlock;
 
+		// Record access time in page flags for top tier if colloid is enabled and normal numa balancing is not
 		if (sysctl_numa_balancing_mode & NUMA_BALANCING_MEMORY_TIERING &&
-		    !toptier)
+		    (!toptier || ((sysctl_numa_balancing_mode & NUMA_BALANCING_COLLOID) && 
+						 !(sysctl_numa_balancing_mode & NUMA_BALANCING_NORMAL))))
 			xchg_page_access_time(page, jiffies_to_msecs(jiffies));
 	}
 	/*

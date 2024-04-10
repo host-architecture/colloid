@@ -1700,6 +1700,7 @@ if yes, returns nid of destination node
 otherwise returns NUMA_NO_NODE
 */
 int numa_migrate_memory_away_target(struct page *page, int src_nid) {
+	unsigned int latency, th;
 	// TODO: add condition to ignore mlocked / unevictable pages
 	if(!(sysctl_numa_balancing_mode & NUMA_BALANCING_MEMORY_TIERING &&
 	     sysctl_numa_balancing_mode & NUMA_BALANCING_COLLOID))
@@ -1713,10 +1714,19 @@ int numa_migrate_memory_away_target(struct page *page, int src_nid) {
 
 	// Local memory is congested
 
-	// Do not move pages that are not in the active list
-	if(!PageActive(page)) {
-		mark_page_accessed(page);
-		return NUMA_NO_NODE;
+	if(sysctl_numa_balancing_mode & NUMA_BALANCING_NORMAL) {
+		// No timestamp, use active/inactive list to determine hotness
+		// Do not move pages that are not in the active list
+		if(!PageActive(page)) {
+			mark_page_accessed(page);
+			return NUMA_NO_NODE;
+		}
+	} else {
+		// Timestamp in page flags. use hint fault latency to determine hotness
+		th = NODE_DATA(src_nid)->nbp_threshold ? : sysctl_numa_balancing_hot_threshold;
+		latency = numa_hint_fault_latency(page);
+		if (latency >= th)
+			return NUMA_NO_NODE;
 	}
 
 	return next_demotion_node(src_nid);

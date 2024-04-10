@@ -599,6 +599,7 @@ void folio_migrate_flags(struct folio *newfolio, struct folio *folio)
 	 * memory node, reset cpupid, because that is used to record
 	 * page access time in slow memory node.
 	 */
+	//  TODO: For colloid, (if normal numa balancing is off) perhaps we don't want to reset 
 	if (sysctl_numa_balancing_mode & NUMA_BALANCING_MEMORY_TIERING) {
 		bool f_toptier = node_is_toptier(page_to_nid(&folio->page));
 		bool t_toptier = node_is_toptier(page_to_nid(&newfolio->page));

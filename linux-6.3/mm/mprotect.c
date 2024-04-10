@@ -173,8 +173,10 @@ static long change_pte_range(struct mmu_gather *tlb,
 					  sysctl_numa_balancing_mode & NUMA_BALANCING_MEMORY_TIERING) &&
 				    toptier)
 					continue;
+				// Record access time in page flags for top tier if colloid is enabled and normal numa balancing is not
 				if (sysctl_numa_balancing_mode & NUMA_BALANCING_MEMORY_TIERING &&
-				    !toptier)
+				    (!toptier || ((sysctl_numa_balancing_mode & NUMA_BALANCING_COLLOID) && 
+								 !(sysctl_numa_balancing_mode & NUMA_BALANCING_NORMAL))))
 					xchg_page_access_time(page,
 						jiffies_to_msecs(jiffies));
 			}
