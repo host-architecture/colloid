@@ -9,7 +9,7 @@
 //#include <linux/memory-tiers.h>
 #include <linux/delay.h>
 
-// #define SPINPOLL // TODO: configure this
+#define SPINPOLL // TODO: configure this
 #define SAMPLE_INTERVAL_MS 10 // Only used if SPINPOLL is not set
 #ifdef SPINPOLL
 #define EWMA_EXP 5
@@ -20,12 +20,12 @@
 extern int colloid_local_lat_gt_remote;
 extern int colloid_nid_of_interest;
 
-#define CORE_MON 31
-#define LOCAL_NUMA 3
+#define CORE_MON 63
+#define LOCAL_NUMA 1
 #define WORKER_BUDGET 1000000
 #define LOG_SIZE 10000
-#define MIN_LOCAL_LAT 40
-#define MIN_REMOTE_LAT 80
+#define MIN_LOCAL_LAT 15
+#define MIN_REMOTE_LAT 30
 
 // CHA counters are MSR-based.  
 //   The starting MSR address is 0x0E00 + 0x10*CHA
@@ -38,11 +38,11 @@ extern int colloid_nid_of_interest;
 #define CHA_MSR_PMON_BASE 0x0E00L
 #define CHA_MSR_PMON_CTL_BASE 0x0E01L
 #define CHA_MSR_PMON_FILTER0_BASE 0x0E05L
-#define CHA_MSR_PMON_FILTER1_BASE 0x0E06L
+// #define CHA_MSR_PMON_FILTER1_BASE 0x0E06L // No FULERT1 on Icelake
 #define CHA_MSR_PMON_STATUS_BASE 0x0E07L
 #define CHA_MSR_PMON_CTR_BASE 0x0E08L
 
-#define NUM_CHA_BOXES 18
+#define NUM_CHA_BOXES 18 // There are 32 CHA boxes in icelake server. After the first 18 boxes, the couter offsets change.
 #define NUM_CHA_COUNTERS 4
 
 u64 smoothed_occ_local, smoothed_inserts_local;
@@ -86,7 +86,7 @@ static void poll_cha_init(void) {
     u32 msr_num;
     u64 msr_val;
     for(cha = 0; cha < NUM_CHA_BOXES; cha++) {
-        msr_num = CHA_MSR_PMON_FILTER0_BASE + (0x10 * cha); // Filter0
+        msr_num = CHA_MSR_PMON_FILTER0_BASE + (0xE * cha); // Filter0
         msr_val = 0x00000000; // default; no filtering
         ret = wrmsr_on_cpu(CORE_MON, msr_num, msr_val & 0xFFFFFFFF, msr_val >> 32);
         if(ret != 0) {
@@ -94,31 +94,31 @@ static void poll_cha_init(void) {
             return;
         }
 
-        msr_num = CHA_MSR_PMON_FILTER1_BASE + (0x10 * cha); // Filter1
-        msr_val = (cha%2 == 0)?(0x40432):(0x40431); // Filter DRd of local/remote on even/odd CHA boxes
-        ret = wrmsr_on_cpu(CORE_MON, msr_num, msr_val & 0xFFFFFFFF, msr_val >> 32);
-        if(ret != 0) {
-            printk(KERN_ERR "wrmsr FILTER1 failed\n");
-            return;
-        }
+        // msr_num = CHA_MSR_PMON_FILTER1_BASE + (0xE * cha); // Filter1
+        // msr_val = (cha%2 == 0)?(0x40432):(0x40431); // Filter DRd of local/remote on even/odd CHA boxes
+        // ret = wrmsr_on_cpu(CORE_MON, msr_num, msr_val & 0xFFFFFFFF, msr_val >> 32);
+        // if(ret != 0) {
+        //     printk(KERN_ERR "wrmsr FILTER1 failed\n");
+        //     return;
+        // }
 
-        msr_num = CHA_MSR_PMON_CTL_BASE + (0x10 * cha) + 0; // counter 0
-        msr_val = 0x403136; // TOR Occupancy
+        msr_num = CHA_MSR_PMON_CTL_BASE + (0xE * cha) + 0; // counter 0
+        msr_val = (cha%2==0)?(0x00c8168600400136):(0x00c8170600400136); // TOR Occupancy, DRd, Miss, local/remote on even/odd CHA boxes
         ret = wrmsr_on_cpu(CORE_MON, msr_num, msr_val & 0xFFFFFFFF, msr_val >> 32);
         if(ret != 0) {
             printk(KERN_ERR "wrmsr COUNTER 0 failed\n");
             return;
         }
 
-        msr_num = CHA_MSR_PMON_CTL_BASE + (0x10 * cha) + 1; // counter 1
-        msr_val = 0x403135; // TOR Inserts
+        msr_num = CHA_MSR_PMON_CTL_BASE + (0xE * cha) + 1; // counter 1
+        msr_val = (cha%2==0)?(0x00c8168600400135):(0x00c8170600400135); // TOR Inserts, DRd, Miss, local/remote on even/odd CHA boxes
         ret = wrmsr_on_cpu(CORE_MON, msr_num, msr_val & 0xFFFFFFFF, msr_val >> 32);
         if(ret != 0) {
             printk(KERN_ERR "wrmsr COUNTER 1 failed\n");
             return;
         }
 
-        msr_num = CHA_MSR_PMON_CTL_BASE + (0x10 * cha) + 2; // counter 2
+        msr_num = CHA_MSR_PMON_CTL_BASE + (0xE * cha) + 2; // counter 2
         msr_val = 0x400000; // CLOCKTICKS
         ret = wrmsr_on_cpu(CORE_MON, msr_num, msr_val & 0xFFFFFFFF, msr_val >> 32);
         if(ret != 0) {
@@ -131,7 +131,7 @@ static void poll_cha_init(void) {
 
 static inline void sample_cha_ctr(int cha, int ctr) {
     u32 msr_num, msr_high, msr_low;
-    msr_num = CHA_MSR_PMON_CTR_BASE + (0x10 * cha) + ctr;    
+    msr_num = CHA_MSR_PMON_CTR_BASE + (0xE * cha) + ctr;    
     rdmsr_on_cpu(CORE_MON, msr_num, &msr_low, &msr_high);
     prev_ctr_val[cha][ctr] = cur_ctr_val[cha][ctr];
     cur_ctr_val[cha][ctr] = (((u64)msr_high) << 32) | msr_low;
@@ -190,7 +190,8 @@ void thread_fun_poll_cha(struct work_struct *work) {
         // log_buffer[log_idx].occ_remote = cur_occ;
         // log_buffer[log_idx].inserts_remote = cur_inserts;
         
-        WRITE_ONCE(colloid_local_lat_gt_remote, (smoothed_occ_local > smoothed_occ_remote));
+        // WRITE_ONCE(colloid_local_lat_gt_remote, (smoothed_occ_local > smoothed_occ_remote));
+        WRITE_ONCE(colloid_local_lat_gt_remote, (smoothed_lat_local > smoothed_lat_remote));
 
         // log_idx = (log_idx+1)%LOG_SIZE;
 
@@ -247,7 +248,7 @@ static int colloidmon_init(void)
     WRITE_ONCE(colloid_nid_of_interest, LOCAL_NUMA);
 
     int i;
-    for(i = 0; i < 60; i++) {
+    for(i = 0; i < 5; i++) {
         msleep(1000);
         printk("%llu %llu\n", READ_ONCE(smoothed_occ_local), READ_ONCE(smoothed_occ_remote));
     }
