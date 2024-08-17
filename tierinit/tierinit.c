@@ -9,8 +9,8 @@
 #include <linux/memory-tiers.h>
 
 #define MEMTIER_DEFAULT_FARMEM_ADISTANCE	(MEMTIER_ADISTANCE_DRAM * 10)
-#define FARMEM_NUMA 2
-#define LOCAL_NUMA 3
+#define FARMEM_NUMA 0
+#define LOCAL_NUMA 1
 
 static struct memory_dev_type *farmem_type;
  
