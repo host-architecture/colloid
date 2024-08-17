@@ -1,1 +1,0 @@
-savedcmd_/home/midhul/colloid/memeater/Module.symvers :=  scripts/mod/modpost -m -a     -o /home/midhul/colloid/memeater/Module.symvers -T /home/midhul/colloid/memeater/modules.order -i Module.symvers -e 

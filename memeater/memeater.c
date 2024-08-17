@@ -11,11 +11,18 @@
 #include <linux/moduleparam.h>
 #include <linux/memory-tiers.h>
 
-#define FARMEM_NUMA 2
-#define LOCAL_NUMA 3
+#define FARMEM_NUMA 0
+#define LOCAL_NUMA 1
+
 
 static int sizeMiB = 0;
 module_param(sizeMiB, int, 0);
+
+static int PGSIZE = 4096;
+module_param(PGSIZE, int, 0);
+
+static int PGORDER = 0;
+module_param(PGORDER, int, 0);
 
 static size_t size;
 static struct page **page_list;
@@ -25,12 +32,12 @@ static int memeater_init(void)
     int i;
     size_t num_pages;
     size = sizeMiB*1024ULL*1024ULL;
-    if(size == 0 || (size % 4096) != 0) {
+    if(size == 0) {
         pr_info("sizeMiB not specified or invalid");
         return -1;
     }
     
-    num_pages = size/4096;
+    num_pages = size/((size_t)PGSIZE);
     page_list = vmalloc(num_pages * sizeof(struct page *));
     if(page_list == NULL) {
         pr_info("failed to allocate page_list");
@@ -43,7 +50,7 @@ static int memeater_init(void)
     // allocate the pages
     for(i = 0; i < num_pages; i++) {
         // page_list[i] = alloc_pages_exact_nid(LOCAL_NUMA, 4096, GFP_KERNEL);
-        page_list[i] = alloc_pages_node(LOCAL_NUMA, GFP_KERNEL, 0);
+        page_list[i] = alloc_pages_node(LOCAL_NUMA, GFP_KERNEL, PGORDER);
         if(page_list[i] == NULL) {
             pr_info("alloc_pages failed");
             goto err;
@@ -56,7 +63,7 @@ static int memeater_init(void)
 err:
     for(i = 0; i < num_pages; i++) {
         if(page_list[i] != NULL) {
-            __free_pages(page_list[i], 0);
+            __free_pages(page_list[i], PGORDER);
         }
     }
     vfree(page_list);
@@ -68,10 +75,10 @@ static void memeater_exit(void)
     int i;
     size_t num_pages;
     
-    num_pages = size/4096;
+    num_pages = size/((size_t)PGSIZE);
     for(i = 0; i < num_pages; i++) {
         if(page_list[i] != NULL) {
-            __free_pages(page_list[i], 0);
+            __free_pages(page_list[i], PGORDER);
         }
     }
 
