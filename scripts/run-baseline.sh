@@ -1,7 +1,7 @@
 #!/bin/bash
 
 config="colloidmt-baseline-gupsrw"
-gups_path=/home/midhul/colloid/gups
+gups_path=/home/midhul/colloid/apps/gups
 mio_path=/home/midhul/mio-colloid
 record_path=/home/midhul/colloid/colloid-stats
 stats_path=/home/midhul/membw-eval

@@ -4,12 +4,12 @@
 # Make sure to check if THP is enabled or not
 
 config=$1
-# gups_path=/home/midhul/colloid/gups
+# gups_path=/home/midhul/colloid/apps/gups
 mio_path=/home/midhul/mio
 record_path=/home/midhul/colloid/colloid-stats
 stats_path=/home/midhul/membw-eval
-memeater_path=/home/midhul/colloid/memeater
-kswapdrst_path=/home/midhul/colloid/kswapdrst
+memeater_path=/home/midhul/colloid/tpp/memeater
+kswapdrst_path=/home/midhul/colloid/tpp/kswapdrst
 scripts_path=/home/midhul/colloid/scripts
 local_numa=1
 local_size=32768

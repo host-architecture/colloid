@@ -2,11 +2,11 @@
 
 
 config=$1
-gups_path=/home/midhul/colloid/gups
+gups_path=/home/midhul/colloid/apps/gups
 mio_path=/home/midhul/mio
 record_path=/home/midhul/colloid/colloid-stats
 stats_path=/home/midhul/membw-eval
-memeater_path=/home/midhul/colloid/memeater
+memeater_path=/home/midhul/colloid/tpp/memeater
 local_numa=1
 local_size=32768
 gups_workload=$2

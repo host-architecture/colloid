@@ -7,7 +7,7 @@
 # TODO: Remember to reduce reserved huge pages when running background traffic
 
 config=$1
-gups_path=/home/midhul/colloid/gups
+gups_path=/home/midhul/colloid/apps/gups
 mio_path=/home/midhul/mio-colloid
 record_path=/home/midhul/colloid/colloid-stats
 stats_path=/home/midhul/membw-eval

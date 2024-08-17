@@ -3,13 +3,13 @@
 # Make sure tiering is initialized
 
 config=$1
-# gups_path=/home/midhul/colloid/gups
+# gups_path=/home/midhul/colloid/apps/gups
 mio_path=/home/midhul/mio
 record_path=/home/midhul/colloid/colloid-stats
 stats_path=/home/midhul/membw-eval
-memeater_path=/home/midhul/colloid/memeater
-kswapdrst_path=/home/midhul/colloid/kswapdrst
-colloidmon_path=/home/midhul/colloid/colloid-mon
+memeater_path=/home/midhul/colloid/tpp/memeater
+kswapdrst_path=/home/midhul/colloid/tpp/kswapdrst
+colloidmon_path=/home/midhul/colloid/tpp/colloid-mon
 scripts_path=/home/midhul/colloid/scripts
 local_numa=1
 local_size=32768
