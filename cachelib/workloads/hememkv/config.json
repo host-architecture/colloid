@@ -1,0 +1,29 @@
+{
+  "cache_config": {
+    "cacheSizeMB": 81920
+  }, 
+  "test_config": 
+    {
+      "generator": "online", 
+      "enableLookaside": true, 
+      "touchValue": true,
+      "keySizeRange": [64, 65], 
+      "keySizeRangeProbability": [1.0],
+      "valSizeRange" : [4096],
+      "valSizeRangeProbability" : [1.0],
+      "popularityBuckets": [20, 80],
+      "popularityWeights": [90, 10], 
+
+      "numKeys": 15000000, 
+      "numOps": 66666666, 
+      "numThreads": 15,
+
+      "addChainedRatio": 0.0, 
+      "setRatio": 0.0, 
+      "delRatio": 0.0, 
+      "getRatio": 0.9,
+      "updateRatio": 0.1, 
+      "loneGetRatio": 0.0
+    }
+ 
+}

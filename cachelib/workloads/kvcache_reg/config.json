@@ -1,0 +1,28 @@
+{
+  "cache_config": {
+    "cacheSizeMB": 81920, 
+    "poolRebalanceIntervalSec": 5
+  }, 
+  "test_config": 
+    {
+      "generator": "online", 
+      "enableLookaside": true, 
+      "touchValue": true,
+      "prepopulateCache": true,
+      "keySizeRange": [16, 255], 
+      "keySizeRangeProbability": [1.0], 
+
+      "numKeys": 150000000, 
+      "numOps": 66666666, 
+      "numThreads": 15, 
+      "popDistFile": "pop.json", 
+      "valSizeDistFile": "sizes.json",
+
+      "addChainedRatio": 0.0, 
+      "setRatio": 0.0, 
+      "delRatio": 0.0, 
+      "getRatio": 0.9845283120275657, 
+      "loneGetRatio": 0.13471687972434254
+    }
+ 
+}
