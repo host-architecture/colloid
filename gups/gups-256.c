@@ -23,8 +23,11 @@
 
 // #define WSS 103079215104ULL
 #define WSS 77309411328ULL
-//#define HOTSS 25769803776ULL
+//#define WSS 1073741824ULL
+//#define WSS 21474836480ULL
+// #define HOTSS 25769803776ULL
 #define HOTSS 21474836480ULL
+//#define HOTSS 1073741824ULL
 // #define WSS 2147483648ULL
 // #define HOTSS 1073741824ULL
 // #define CHUNK_SIZE 4096
@@ -65,12 +68,18 @@ typedef struct {
     _Atomic int finish;
 } ThreadArgs;
 
+#define MAP_HUGE_1GB (30 << MAP_HUGE_SHIFT)
+
 void *thread_function(void *arg) {
     ThreadArgs *args = (ThreadArgs *)arg;
     // char *a = (char *)malloc(args->buf_size);
     int mmap_flags =  MAP_PRIVATE |  MAP_ANONYMOUS;
     if(getenv("GUPS_HUGEPAGES") != NULL) {
         mmap_flags |= MAP_HUGETLB;
+    }
+    if(getenv("GUPS_HUGEPAGES_1GB") != NULL) {
+        mmap_flags |= MAP_HUGETLB;
+        mmap_flags |= MAP_HUGE_1GB;
     }
     char *a = mmap(0, args->buf_size, PROT_READ | PROT_WRITE, mmap_flags, -1, 0);
     if(a == NULL) {
@@ -194,73 +203,45 @@ void *thread_function(void *arg) {
     __m512i sum = _mm512_set_epi32(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
     __m512i val = _mm512_set_epi32(1995, 1995, 2002, 2002, 1995, 1995, 2002, 2002, 1995, 1995, 2002, 2002, 1995, 1995, 2002, 2002);
     int i;
+    char *hot_start = a + (args->buf_size - args->hot_size);
+    size_t hot_slots = args->hot_size / 256;
+    size_t cold_slots = (args->buf_size)/256;
+    char *start;
+    size_t slots;
+    char *chunk;
     while(count < 999999999999999ULL) {
-        for(i = 0; i < 1024; i++) {
-            char *start;
-            size_t slots;
+        #if defined(WORKLOAD_READWRITE)
+        for(i = 0; i < 32768; i++) {
             x ^= x << 13;
             x ^= x >> 7;
             x ^= x << 17;
-            if(x%100 < 90) {
-                // access hot region
-                start = a + (args->buf_size - args->hot_size);
-                slots = args->hot_size / CHUNK_SIZE;
-            } else {
-                start = a;
-                slots = (args->buf_size - args->hot_size)/CHUNK_SIZE;
-            }
-
-            // access random slot
+            start = (x%100 < 90)?(hot_start):(a);
+            slots = (x%100 < 90)?(hot_slots):(cold_slots);
             x ^= x << 13;
             x ^= x >> 7;
             x ^= x << 17;
-            char *chunk = start + CHUNK_SIZE*(x%slots);
-            // printf("a: %p\n", a);
-            // printf("chunk: %p\n", chunk);
-            int k;
-            #if defined(WORKLOAD_READWRITE)
-            for(k = 0; k < CL_PER_CHUNK; k++) {
-                __m512i mm_a = _mm512_load_si512(&chunk[64*k]);
-                _mm512_store_si512(&chunk[64*k], _mm512_add_epi32(mm_a, val)); 
-            }
-            #elif defined(WORKLOAD_READ)
-            for(k = 0; k < CL_PER_CHUNK; k++) {
-                __m512i mm_a = _mm512_load_si512(&chunk[64*k]);
-                sum = _mm512_add_epi32(sum, mm_a);
-            }
-            #elif defined(WORKLOAD_2TO1)
-            if(count%2 == 0) {
-                for(k = 0; k < CL_PER_CHUNK; k++) {
-                    __m512i mm_a = _mm512_load_si512(&chunk[64*k]);
-                    sum = _mm512_add_epi32(sum, mm_a);
-                }
-            } else {
-                for(k = 0; k < CL_PER_CHUNK; k++) {
-                    __m512i mm_a = _mm512_load_si512(&chunk[64*k]);
-                    _mm512_store_si512(&chunk[64*k], _mm512_add_epi32(mm_a, val)); 
-                }
-            }
-            #elif defined(WORKLOAD_3TO1)
-            if(count%3 < 2) {
-                for(k = 0; k < CL_PER_CHUNK; k++) {
-                    __m512i mm_a = _mm512_load_si512(&chunk[64*k]);
-                    sum = _mm512_add_epi32(sum, mm_a);
-                }
-            } else {
-                for(k = 0; k < CL_PER_CHUNK; k++) {
-                    __m512i mm_a = _mm512_load_si512(&chunk[64*k]);
-                    _mm512_store_si512(&chunk[64*k], _mm512_add_epi32(mm_a, val)); 
-                }
-            }
-            #else
-                #error "Define WORKLOAD"
-            #endif
-
+            chunk = start + 256*(x%slots);
+            __m512i mm_a = _mm512_load_si512(&chunk[0]);
+            _mm512_store_si512(&chunk[0], _mm512_add_epi32(mm_a, val));
+            mm_a = _mm512_load_si512(&chunk[64]);
+            _mm512_store_si512(&chunk[64], _mm512_add_epi32(mm_a, val));
+            mm_a = _mm512_load_si512(&chunk[128]);
+            _mm512_store_si512(&chunk[128], _mm512_add_epi32(mm_a, val));
+            mm_a = _mm512_load_si512(&chunk[192]);
+            _mm512_store_si512(&chunk[192], _mm512_add_epi32(mm_a, val));
             count++;
         }
+        #else
+            #error "Define WORKLOAD"
+        #endif
+
+        
         atomic_store(args->count_ptr, count);
         if(atomic_load(&(args->finish))) {
-            return NULL;
+            	if(munmap(a, args->buf_size) != 0) {
+			printf("munmap failed\n");
+		}
+		return NULL;
         }
         // cur_ts = rdtscp();
         // printf("cur_ts: %lu, prev_ts: %lu\n", cur_ts, prev_ts);

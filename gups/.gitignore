@@ -1,6 +1,15 @@
 # Binary
 gups
+gups-r
+gups-rw
+gups64-rw
+gups64-r
+gups64-2to1
+gups64-3to1
+gups-2to1
+gups-3to1
+gups256-rw
+gups1024-rw
 *.o
 
-# Logs
-log.chaiio
+
