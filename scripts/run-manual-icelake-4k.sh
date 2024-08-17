@@ -1,16 +1,14 @@
 #!/bin/bash
 
-# For hugepages make sure to reserve
-# echo 15900 | sudo tee /sys/devices/system/node/node3/hugepages/hugepages-2048kB/nr_hugepages
-# echo 46080 | sudo tee /sys/devices/system/node/node2/hugepages/hugepages-2048kB/nr_hugepages
-# TODO: GUPS_HUGEPAGES is currently enabled
-# TODO: Remember to reduce reserved huge pages when running background traffic
 
 config=$1
 gups_path=/home/midhul/colloid/gups
 mio_path=/home/midhul/mio
 record_path=/home/midhul/colloid/colloid-stats
 stats_path=/home/midhul/membw-eval
+memeater_path=/home/midhul/colloid/memeater
+local_numa=1
+local_size=32768
 gups_workload=$2
 gups_cores=$3
 stream_num_cores=$4
@@ -28,6 +26,7 @@ function cleanup() {
     killall record_stats;
     killall stream;
     killall python3;
+    rmmod memeater.ko;
     echo "Cleaned up";
 }
 
@@ -58,6 +57,11 @@ echo 0 > /proc/sys/kernel/numa_balancing
 #     done;
 # done;
 
+# Set local memory capacity
+insmod $memeater_path/memeater.ko sizeMiB=$(numastat -m | grep MemFree | awk -v nidx=$local_numa -v sz=$local_size -v b=$stream_num_cores '{print int($(2+nidx)-sz-b*512)}');
+echo "Local mem size"
+echo $(numastat -m | grep MemFree)
+
 # Run GUPS with varying percentage of hot set in local memory + background traffic
 for x in 0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1; do
 #for x in 1.0; do
@@ -71,7 +75,11 @@ for x in 0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1; do
     	pid_mio=$!;
     fi
     sleep 3;
-    GUPS_HUGEPAGES=1 $gups_path/$gups_workload $gups_cores manual $x distribute > $stats_path/$config-x$x.app.txt 2>&1 &
+
+    echo $(numastat -m | grep MemFree)
+    echo $(numastat -m | grep MemFree) > $stats_path/$config-x$x.memfree.txt
+
+    numactl --membind 0 $gups_path/$gups_workload $gups_cores manual $x distribute > $stats_path/$config-x$x.app.txt 2>&1 &
     pid_gups=$!;
     #taskset -c 0 $record_path/record_stats > $stats_path/$config-bg-x$x.stats.txt 2>&1 &
     #pid_stats=$!;
@@ -90,5 +98,7 @@ for x in 0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1; do
 	sleep 1;
    fi
 done;
+
+rmmod memeater.ko;
 
 echo "Done";

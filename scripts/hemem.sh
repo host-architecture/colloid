@@ -19,6 +19,7 @@ perfsh_path="/home/midhul/hemem/run_perf.sh"
 # gups_workload=$2
 # gups_cores=4
 # stream_num_cores=3
+# Duration value of 0 implies run app to completion
 duration=$2
 app_cores=$3
 bg_cores=$4
@@ -65,19 +66,28 @@ all_pids+=($pid_perf);
 sleep 3;
 
 mio_opts=( $MIO_STATS )
+delay_bg=0
+if [ -z "${DELAY_BG}" ]; then
+    delay_bg=0;
+else
+    echo "delay bg: ${DELAY_BG}"; 
+    delay_bg=$DELAY_BG;
+fi
 
-if [ $bg_cores -gt 0 ]; then
-	echo "Running bg traffic on $bg_cores"
-	PYTHONPATH=$PYTHONPATH:$mio_path python3 -m mio $config-mio --ant_cpus $bg_core_list --ant_num_cores $bg_cores --ant_mem_numa 1 --ant stream --ant_writefrac 50 --ant_inst_size 64 --ant_duration 10000 "${mio_opts[@]}" &
-	pid_mio=$!;
-	all_pids+=($pid_mio);
-	sleep 7;
-elif [ "${#mio_opts[@]}" -gt 0 ]; then
-    echo "Running mio"
-    PYTHONPATH=$PYTHONPATH:$mio_path python3 -m mio $config-mio "${mio_opts[@]}" &
-    pid_mio=$!;
-	all_pids+=($pid_mio);
-	sleep 7;
+if [ $delay_bg -eq 0 ]; then
+    if [ $bg_cores -gt 0 ]; then
+        echo "Running bg traffic on $bg_cores"
+        PYTHONPATH=$PYTHONPATH:$mio_path python3 -m mio $config-mio --ant_cpus $bg_core_list --ant_num_cores $bg_cores --ant_mem_numa 1 --ant stream --ant_writefrac 50 --ant_inst_size 64 --ant_duration 10000 "${mio_opts[@]}" &
+        pid_mio=$!;
+        all_pids+=($pid_mio);
+        sleep 7;
+    elif [ "${#mio_opts[@]}" -gt 0 ]; then
+        echo "Running mio"
+        PYTHONPATH=$PYTHONPATH:$mio_path python3 -m mio $config-mio "${mio_opts[@]}" &
+        pid_mio=$!;
+        all_pids+=($pid_mio);
+        sleep 7;
+    fi
 fi
 
 # run actual app
@@ -86,11 +96,29 @@ LD_LIBRARY_PATH=$lib_path LD_PRELOAD=$hemem_lib "${args_after_double_dash[@]}" >
 pid_app=$!;
 all_pids+=($pid_app);
 
-sleep $duration;
-kill $pid_app;
-while kill -0 $pid_app; do
-    sleep 1;
-done;
+if [ $delay_bg -gt 0 ] && [ $bg_cores -gt 0 ]; then
+    sleep $delay_bg;
+    echo "Running bg traffic on $bg_cores"
+    PYTHONPATH=$PYTHONPATH:$mio_path python3 -m mio $config-mio --ant_cpus $bg_core_list --ant_num_cores $bg_cores --ant_mem_numa 1 --ant stream --ant_writefrac 50 --ant_inst_size 64 --ant_duration 10000 "${mio_opts[@]}" &
+    pid_mio=$!;
+    all_pids+=($pid_mio);
+    if [ $duration -gt 0 ]; then
+        sleep $(($duration-$delay_bg));
+    fi
+else
+    if [ $duration -gt 0 ]; then
+        sleep $duration;
+    fi
+fi
+
+if [ $duration -gt 0 ]; then
+    kill $pid_app;
+    while kill -0 $pid_app; do
+        sleep 1;
+    done;
+else
+    wait $pid_app;
+fi
 
 head -n -1 /tmp/hemem-colloid.log > $stats_path/$config.hemem-colloid.log
 
