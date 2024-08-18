@@ -22,3 +22,18 @@ Access to the server will be facilitated through a secure VPN. We will share VPN
 We provide a quick start guide to run a simple experiment on HeMem+colloid and TPP+colloid to test that they are functional. Detailed instructions are provided [here](func). (Similar flow will be used later for reproducing the paper results. We recommend that reviewers try this out to gain familiarity with the setup).
 
 ## Reproducing results
+
+### Experiments
+
+Experiments described in the paper can be run using the scripts provided in this repository.
+
+We recommend running experiments in the order of systems (i.e., run all experiments for one system before moving to the next system). This is because switching between systems is time consuming---it requires changing the kernel and thus rebooting the server.  The following table summarizes the different systems/configurations evaluated in the paper and the directory containing the respective experiment scripts. The READMEs in the respective directories provide detailed instructions on how to run all the experiments for each system.
+
+| System / configuration | Related Figures |	Directory | Estimated time |
+| :-------------- | :--------------- | :----------------- | :------------------ |
+| HeMem (+colloid)   |     	Figure 4, 6, 7, 8  |      	[hemem](hemem)   | todo |      
+|  TPP w/ THP (+colloid) |  	Figure 4, 6, 8   |     [tppthp](tppthp)  |   todo   |
+|   TPP (+colloid)       | 	Figure 4, 6, 8   |     [tpp](tpp)   |  todo     |  
+
+
+**Tip:** Since many of the individual experiments take on the order of several minutes to complete, we strongly recommend using `tmux`/`screen` to avoid experiments from being disrupted by ssh getting disconnected. For a crash course on `tmux` see [here](docs/tmux-usage.md). 
