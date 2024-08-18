@@ -19,4 +19,6 @@ Access to the server will be facilitated through a secure VPN. We will share VPN
 
 ## Testing functionality
 
+We provide a quick start guide to run a simple experiment on HeMem+colloid and TPP+colloid to test that they are functional. Detailed instructions are provided [here](func). (Similar flow will be used later for reproducing the paper results. We recommend that reviewers try this out to gain familiarity with the setup).
+
 ## Reproducing results
