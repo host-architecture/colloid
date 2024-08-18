@@ -4,6 +4,9 @@ Colloid is memory management mechanism for tiered memory architectures (e.g. CXL
 
 This repository supplements our (upcoming) SOSP'23 paper and provides open-source implementations of colloid on top of different memory tiering systems, along with scripts and documentation to reproduce/extend the results from our paper.
 
+## Artifact Evaluation
+For SOSP'24 artifact evaluation, please directly navigate to [`sosp24-artifact/`](sosp24-artifact) for detailed instructions.
+
 ## Overview
 Implementation of colloid on top of different existing memory tiering systems are provided in the following sub-repositories/sub-directories. Please see the corresponding READMEs in each of these directories for detailed documentation on how to setup and run the corresponding systems with/without colloid:
 
