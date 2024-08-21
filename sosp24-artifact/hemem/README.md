@@ -1,5 +1,25 @@
 # Testing HeMem+colloid
 
+`cd` into this directory
+
+Boot into HeMem kernel
+
+```
+sudo cp ../grub/hemem.grub /etc/default/grub
+sudo update-grub
+sudo reboot 
+```
+
+`ssh` will be disconnected and the server will take a few mins to reboot (5-10 mins), after which it will come back up. After connecting again, check the kernel version using:
+
+```
+uname -a
+```
+
+It should be `5.1.0-rc4-hemem+`
+
+Initialization before running HeMem (+ colloid)
+
 ```
 sudo ./init.sh
 ```
