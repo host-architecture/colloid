@@ -33,4 +33,4 @@ We recommend running experiments in the order of systems (i.e., run all experime
 |   TPP (+colloid)       | 	Figure 4, 6, 8   |     [tpp](tpp)   |  5 hrs    |  
 
 
-**Tip:** Since many of the individual experiments take on the order of several minutes to complete, we strongly recommend using `tmux`/`screen` to avoid experiments from being disrupted by ssh getting disconnected. For a crash course on `tmux` see [here](docs/tmux-usage.md). 
+**Tip:** Since many of the individual experiments take on the order of several minutes to complete, we strongly recommend using `tmux`/`screen` to avoid experiments from being disrupted by ssh getting disconnected. For a crash course on `tmux` see [here](tmux-usage.md). 
