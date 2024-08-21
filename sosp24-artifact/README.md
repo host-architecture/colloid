@@ -10,18 +10,15 @@ For artifact evaluation, we will provide evaluators (secure and anonymous) acces
 
 Access to the server will be facilitated through a secure VPN. We will share VPN details and ssh credentials through HotCRP once the evaluation period starts.
 
-## Directory structure 
-* [`docs`](docs) Documentation for general environment setup used by all experiments.
-* [`func`](func) Testing functionality of artifacts. 
-* [`hemem`](hemem) HeMem (+ colloid) experiments.
-* [`tppthp`](tppthp) TPP w/ THP (+ colloid) experiments.
-* [`tpp`](tpp) TPP (+ colloid) experiments.
+## Testing functionality (Estimated time: 30 mins)
 
-## Testing functionality (Estimated time: todo)
+We provide a quick start guide to run a simple experiment with each of the systems to test that they are functional. Detailed instructions for each system are provided below (Similar flow will be used later for reproducing the paper results. We recommend that reviewers try this out to gain familiarity with the setup):
 
-We provide a quick start guide to run a simple experiment on HeMem+colloid and TPP+colloid to test that they are functional. Detailed instructions are provided [here](func). (Similar flow will be used later for reproducing the paper results. We recommend that reviewers try this out to gain familiarity with the setup).
+* For, HeMem + colloid, see [here](hemem/test.md)
+* For, TPP + colloid, see [here](hemem/test.md)
 
-## Reproducing results
+
+## Reproducing results (Estimated time: 14 hrs)
 
 ### Experiments
 
@@ -31,9 +28,9 @@ We recommend running experiments in the order of systems (i.e., run all experime
 
 | System / configuration | Related Figures |	Directory | Estimated time |
 | :-------------- | :--------------- | :----------------- | :------------------ |
-| HeMem (+colloid)   |     	Figure 4, 6, 7, 8  |      	[hemem](hemem)   | todo |      
-|  TPP w/ THP (+colloid) |  	Figure 4, 6, 8   |     [tppthp](tppthp)  |   todo   |
-|   TPP (+colloid)       | 	Figure 4, 6, 8   |     [tpp](tpp)   |  todo     |  
+| HeMem (+colloid)   |     	Figure 4, 6, 7, 8  |      	[hemem](hemem)   | 3.5 hrs |      
+|  TPP w/ THP (+colloid) |  	Figure 4, 6, 8   |     [tppthp](tppthp)  |   5.5 hrs  |
+|   TPP (+colloid)       | 	Figure 4, 6, 8   |     [tpp](tpp)   |  5 hrs    |  
 
 
 **Tip:** Since many of the individual experiments take on the order of several minutes to complete, we strongly recommend using `tmux`/`screen` to avoid experiments from being disrupted by ssh getting disconnected. For a crash course on `tmux` see [here](docs/tmux-usage.md). 
