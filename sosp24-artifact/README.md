@@ -15,7 +15,7 @@ Access to the server will be facilitated through a secure VPN. We will share VPN
 We provide a quick start guide to run a simple experiment with each of the systems to test that they are functional. Detailed instructions for each system are provided below (Similar flow will be used later for reproducing the paper results. We recommend that reviewers try this out to gain familiarity with the setup):
 
 * For, HeMem + colloid, see [here](hemem/test.md)
-* For, TPP + colloid, see [here](hemem/test.md)
+* For, TPP + colloid, see [here](tpp/test.md)
 
 
 ## Reproducing results (Estimated time: 14 hrs)
