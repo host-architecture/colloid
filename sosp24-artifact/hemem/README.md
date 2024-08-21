@@ -27,3 +27,53 @@ Output:
   }
 ]
 ```
+
+Run
+
+```
+sudo ./run-test.sh
+```
+
+Output
+
+```shell
+Cleaned up
+Running test-hemem-colloid
+```
+
+Experiment running (can check `htop` to see CPUs being used). Will run for 60 seconds, and one finished it will print `Done`.
+
+Check app output
+
+```
+cat ~/colloid-eval/test-hemem-colloid.app.txt | tail
+```
+
+Example output
+
+```shell
+sosp24ae@genie13:~/colloid/sosp24-artifact/hemem$ cat ~/colloid-eval/test-hemem-colloid.app.txt | tail
+606732288
+607387648
+606863360
+606732288
+607518720
+606208000
+606863360
+607256576
+607125504
+606732288
+```
+
+HeMem stats
+
+```
+cat ~/colloid-eval/test-hemem-colloid.hemem.txt | tail
+```
+
+```shell
+pid: [339728]	mem_allocated: [77290536960]	pages_allocated: [0]	missing_faults_handled: [0]	bytes_migrated: [52579794944]	migrations_up: [93]	migrations_down: [93]	migration_waits: [15963]
+	occ_local: [1.667088]	 occ_remote: [0.148766]
+	dram_hot_list.numentries: [3634]	dram_cold_list.numentries: [9166]	nvm_hot_list.numentries: [0]	nvm_cold_list.numentries: [24055]	hemem_pages: [105762]	total_pages: [105794]	zero_pages: [0]	throttle/unthrottle_cnt: [0/0]	cools: [92]
+	dram_accesses: [100913]	nvm_accesses: [4851]	samples: [6950 7328 5530 7145 7314 7359 7281 7042 6901 7042 7337 7012 7041 7235 7265 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 ]	total_samples: [105783]
+```
