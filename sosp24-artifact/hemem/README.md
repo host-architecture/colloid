@@ -1,6 +1,6 @@
 # Testing HeMem+colloid
 
-Note: On our server (provided for artifact evaluation), HeMem+colloid is already compiled and configured, so you can run experiments directly by following the below instructions. If you are using a different server/setup, make sure to setup and configure HeMem+colloid before proceeding by following the documentation in `../../hemem/README.md`.  
+Note: The server provided for artifact evaluation already has HeMem+colloid compiled and configured, so you can run experiments directly by following the below instructions. If you are using a different server/setup, make sure to setup and configure HeMem+colloid before proceeding by following the documentation in `../../hemem/README.md`.  
 
 `cd` into this directory
 
