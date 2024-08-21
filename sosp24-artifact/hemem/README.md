@@ -1,6 +1,6 @@
 # Reproducing HeMem (+ colloid) results [Estimated time: 3.5 hours]
 
-Note: If not already done, we recommend testing the functionality of HeMem+colloid (see [here](init.md)), before trying to reproduce the paper results.
+Note: If not already done, we recommend testing the functionality of HeMem+colloid (see [here](test.md)), before trying to reproduce the paper results.
 
 Note: The server provided for artifact evaluation already has HeMem+colloid compiled and configured, so you can run experiments directly by following the below instructions. If you are using a different server/setup, make sure to setup and configure HeMem+colloid before proceeding by following the documentation in `../../hemem/README.md`.  
 
