@@ -11,7 +11,7 @@ For SOSP'24 artifact evaluation, please directly navigate to [`sosp24-artifact/`
 Implementation of colloid on top of different existing memory tiering systems are provided in the following sub-repositories/sub-directories. Please see the corresponding READMEs in each of these directories for detailed documentation on how to setup and run the corresponding systems with/without colloid:
 
 * `hemem/` Our fork of [HeMem](https://dl.acm.org/doi/10.1145/3477132.3483550) with colloid integration.
-* [`tpp/`](tpp) Our fork of Linux 6.3, which contains up-streamed version of [TPP](https://dl.acm.org/doi/10.1145/3582016.3582063), with colloid integration.
+* `tpp/` Our fork of Linux 6.3, which contains up-streamed version of [TPP](https://dl.acm.org/doi/10.1145/3582016.3582063), with colloid integration.
 
 Additionally, [`apps/`](apps) provides source code for benchmark applications, [`scripts/`](scripts) provides helper scripts to run experiments, and [`workloads/`](workloads) provides configuration files for some of the workloads evaluated in the paper. 
 
