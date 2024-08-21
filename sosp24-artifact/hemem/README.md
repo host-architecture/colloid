@@ -1,4 +1,4 @@
-# Reproducing HeMem (+ colloid) results
+# Reproducing HeMem (+ colloid) results [Estimated time: 3.5 hours]
 
 Note: If not already done, we recommend testing the functionality of HeMem+colloid (see [here](init.md)), before trying to reproduce the paper results.
 
