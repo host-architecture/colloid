@@ -26,6 +26,8 @@ Run the following to perform the necessary initialization before running TPP+col
 sudo ./init.sh
 ```
 
+If successful, the script should just output "Successful".
+
 Now we are all set to run an actual experiment with TPP+colloid. The below command runs the GUPS application (used in the paper) with TPP+colloid for 60 seconds:
 
 ```
@@ -44,15 +46,44 @@ This application periodically outputs its throughput. So if it runs successfully
 
 ```shell
 sosp24ae@genie13:~/colloid/sosp24-artifact/tpp$ cat ~/colloid-eval/test-tpp-colloid.app.txt | tail
-606732288
-607387648
-606863360
-606732288
-607518720
-606208000
-606863360
-607256576
-607125504
-606732288
+354680832
+354942976
+348782592
+344326144
+345636864
+348389376
+355074048
+358088704
+384434176
+387579904
 ```
+
+To check whether page migrations are working, we can check the vmstat log:
+
+```
+cat ~/colloid-eval/test-tpp-colloid.before_vmstat.txt | grep pgpromote_success
+cat ~/colloid-eval/test-tpp-colloid.after_vmstat.txt | grep pgpromote_success
+```
+
+The difference between the before and after values shows the number of successful page promotions during the experiment. If this is non-zero, then it indicates that page migrations are being executed
+
+To check that colloid functionality is working, we can check the colloid stats log:
+
+```
+cat ~/colloid-eval/test-tpp-colloid.mon.txt | tail
+```
+
+Example output:
+```
+sosp24ae@genie13:~/colloid/sosp24-artifact/tpp$ cat ~/colloid-eval/test-tpp-colloid.mon.txt | tail
+53, colloid_local_lat_gt_remote: 0, local_lat: 20, remote_lat: 40, local_occ: 153571, remote_occ: 1373993, local_inserts: 7617, remote_inserts: 34074, kswapd_failues: 0
+54, colloid_local_lat_gt_remote: 0, local_lat: 21, remote_lat: 40, local_occ: 142178, remote_occ: 1315619, local_inserts: 6673, remote_inserts: 32705, kswapd_failues: 0
+55, colloid_local_lat_gt_remote: 0, local_lat: 21, remote_lat: 40, local_occ: 167175, remote_occ: 1237960, local_inserts: 7774, remote_inserts: 30813, kswapd_failues: 0
+56, colloid_local_lat_gt_remote: 0, local_lat: 21, remote_lat: 39, local_occ: 171475, remote_occ: 1239986, local_inserts: 8033, remote_inserts: 31162, kswapd_failues: 0
+57, colloid_local_lat_gt_remote: 0, local_lat: 21, remote_lat: 39, local_occ: 171438, remote_occ: 1255231, local_inserts: 7943, remote_inserts: 31586, kswapd_failues: 0
+58, colloid_local_lat_gt_remote: 0, local_lat: 20, remote_lat: 39, local_occ: 189697, remote_occ: 1243862, local_inserts: 9347, remote_inserts: 31186, kswapd_failues: 0
+59, colloid_local_lat_gt_remote: 0, local_lat: 21, remote_lat: 40, local_occ: 213809, remote_occ: 1301030, local_inserts: 10116, remote_inserts: 32078, kswapd_failues: 0
+```
+
+Non-zero values of `local_lat` and `remote_lat` indicate that colloid loaded latency monitoring is working.
 

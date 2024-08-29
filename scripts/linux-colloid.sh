@@ -3,14 +3,14 @@
 # Make sure tiering is initialized
 
 config=$1
-# gups_path=/home/midhul/colloid/apps/gups
-mio_path=/home/midhul/mio
-record_path=/home/midhul/colloid/colloid-stats
-stats_path=/home/midhul/membw-eval
-memeater_path=/home/midhul/colloid/tpp/memeater
-kswapdrst_path=/home/midhul/colloid/tpp/kswapdrst
-colloidmon_path=/home/midhul/colloid/tpp/colloid-mon
-scripts_path=/home/midhul/colloid/scripts
+# gups_path=/home/sosp24ae/colloid/apps/gups
+mio_path=/home/sosp24ae/mio
+record_path=/home/sosp24ae/colloid/colloid-stats
+stats_path=/home/sosp24ae/colloid-eval
+memeater_path=/home/sosp24ae/colloid/tpp/memeater
+kswapdrst_path=/home/sosp24ae/colloid/tpp/kswapdrst
+colloidmon_path=/home/sosp24ae/colloid/tpp/colloid-mon
+scripts_path=/home/sosp24ae/colloid/scripts
 local_numa=1
 local_size=32768
 # gups_workload=$2
@@ -29,7 +29,7 @@ fi
 
 all_core_list="1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31,33,35,37,39,41,43,45,47,49,51,53,55,57,59"
 bg_core_list=$(echo "$all_core_list" | cut -d ',' -f $((app_cores + 1))-)
-echo $bg_core_list
+# echo $bg_core_list
 
 index=0
 for arg in "$@"; do
@@ -47,15 +47,15 @@ all_pids=()
 
 function cleanup() {
     for pid in "${all_pids[@]}"; do
-        kill -9 $pid;
+        kill -9 $pid > /dev/null 2>&1;
     done;
-    killall perf
-    killall python3
-    killall stream
-    killall bpftrace
-    rmmod memeater.ko
-    rmmod kswapdrst.ko
-    rmmod colloid-mon.ko
+    killall perf > /dev/null 2>&1;
+    killall python3 > /dev/null 2>&1;
+    killall stream > /dev/null 2>&1;
+    killall bpftrace > /dev/null 2>&1;
+    rmmod memeater.ko > /dev/null 2>&1;
+    rmmod kswapdrst.ko > /dev/null 2>&1;
+    rmmod colloid-mon.ko > /dev/null 2>&1;
     $scripts_path/disable_thp.sh
     echo "Cleaned up";
 }
@@ -132,32 +132,32 @@ echo "Running $config"
 pid_app=$!;
 all_pids+=($pid_app);
 
-echo "running bpftrace";
+echo "running bpftrace for logging";
 bpftrace -e "BEGIN {@start = nsecs;} interval:s:1 {printf(\"%ld, colloid_local_lat_gt_remote: %d, local_lat: %lu, remote_lat: %lu, local_occ: %lu, remote_occ: %lu, local_inserts: %lu, remote_inserts: %lu, kswapd_failues: %d\n\", (nsecs-@start)/1e9, *kaddr(\"colloid_local_lat_gt_remote\"), *($addr_lat_local), *($addr_lat_remote), *($addr_occ_local), *($addr_occ_remote), *($addr_inserts_local), *($addr_inserts_remote), ((struct pglist_data *)(*(kaddr(\"node_data\") + 8*1)))->kswapd_failures);}" > $stats_path/$config.mon.txt 2>&1 &
 pid_bpf=$!;
 
 # record vm stats for duration
-rm $stats_path/$config.vmstat.txt
+rm -f $stats_path/$config.vmstat.txt
 if [ $duration -gt 0 ]; then
     for i in $(seq 1 1 $duration); do
         grep -E "pgdemote|pgpromote|pgmigrate|thp_migration" /proc/vmstat >> $stats_path/$config.vmstat.txt
         sleep 1;
     done;
 else
-    while kill -0 $pid_app; do
+    while kill -0 $pid_app > /dev/null 2>&1; do
         grep -E "pgdemote|pgpromote|pgmigrate|thp_migration" /proc/vmstat >> $stats_path/$config.vmstat.txt
         sleep 1;
     done;
 fi
 
-killall bpftrace;
-while kill -0 $pid_bpf; do
+killall bpftrace > /dev/null 2>&1;
+while kill -0 $pid_bpf > /dev/null 2>&1; do
     sleep 1;
 done;
 
 if [ $duration -gt 0 ]; then
-    kill $pid_app;
-    while kill -0 $pid_app; do
+    kill $pid_app > /dev/null 2>&1;
+    while kill -0 $pid_app > /dev/null 2>&1; do
         sleep 1;
     done;
 fi
@@ -165,56 +165,18 @@ fi
 cat /proc/vmstat > $stats_path/$config.after_vmstat.txt
 
 if [ $bg_cores -gt 0 ] || [ "${#mio_opts[@]}" -gt 0 ]; then
-	kill $pid_mio;
-	while kill -0 $pid_mio; do
+	kill $pid_mio > /dev/null 2>&1;
+	while kill -0 $pid_mio > /dev/null 2>&1; do
     		sleep 1;
 	done;
-	killall python3
-	killall stream
+	killall python3 > /dev/null 2>&1;
+	killall stream > /dev/null 2>&1;
 fi
 
-rmmod memeater.ko
-rmmod kswapdrst.ko
-rmmod colloid-mon.ko
+rmmod memeater.ko > /dev/null 2>&1;
+rmmod kswapdrst.ko > /dev/null 2>&1;
+rmmod colloid-mon.ko > /dev/null 2>&1;
 
 $scripts_path/disable_thp.sh
-
-
-
-# Run GUPS in isolation
-# echo "Running $config-iso"
-# LD_LIBRARY_PATH=$lib_path LD_PRELOAD=$hemem_lib $gups_path/$gups_workload $gups_cores > $stats_path/$config-iso.gups.txt 2> $stats_path/$config-iso.hemem.txt &
-# pid_gups=$!;
-# taskset -c 0 $record_path/record_stats > $stats_path/$config-iso.stats.txt 2>&1 &
-# pid_stats=$!;
-# sleep $duration;
-# killall record_stats;
-# while kill -0 $pid_stats; do
-#     sleep 1;
-# done;
-# killall $gups_workload;
-# while kill -0 $pid_gups; do
-#     sleep 1;
-# done;
-
-# Run GUPS with background traffic
-#echo "Running $config-bg"
-#PYTHONPATH=$PYTHONPATH:$mio_path python3 -m mio $config-bg --ant_cpus $stream_core_list --ant_num_cores $stream_num_cores --ant_mem_numa 3 --ant stream --ant_writefrac 50 --ant_inst_size 64 --ant_duration $(($duration+20)) &
-#pid_mio=$!;
-#sleep 10;
-#$gups_path/$gups_workload $gups_cores > $stats_path/$config-bg.gups.txt 2>&1 &
-#pid_gups=$!;
-#taskset -c 0 $record_path/record_stats > $stats_path/$config-bg.stats.txt 2>&1 &
-#pid_stats=$!;
-#sleep $duration;
-#killall record_stats;
-#while kill -0 $pid_stats; do
-#    sleep 1;
-#done;
-#killall $gups_workload;
-#while kill -0 $pid_gups; do
-#    sleep 1;
-#done;
-#wait $pid_mio;
 
 echo "Done";

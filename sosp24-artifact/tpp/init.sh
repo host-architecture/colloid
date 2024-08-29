@@ -1,7 +1,14 @@
-# Script to initialize HeMem (+ colloid) for experiments
+#!/bin/bash
 
-echo 1000000 > /proc/sys/vm/max_map_count
+# Script to initialize TPP (+ colloid) for experiments
 
-# Setup /dev/dax devices
-sudo ndctl create-namespace -f -e namespace1.0 --mode=devdax --align 2M
-sudo ndctl create-namespace -f -e namespace0.0 --mode=devdax --align 2M
+tierinit_path="${BASH_SOURCE%/*}/../../tpp/tierinit"
+
+# Initialize tiers
+insmod $tierinit_path/tierinit.ko
+
+if lsmod | grep -q "$tierinit"; then
+    echo "Successful"
+else
+    echo "Error: Module tierinit is not loaded."
+fi
