@@ -78,7 +78,7 @@ Use the following script to plot the graph of throughput over time (using gnuplo
 ./plot_fig7.sh
 ```
 
-The output plots are generated at `~/colloid-eval/fig7a.eps`, `~/colloid-eval/fig7b.eps`, `~/colloid-eval/fig7c.eps`. You can copy these images onto your laptop/workstation (e.g. via scp), and view them locally.
+The output plots are generated at `~/colloid-eval/fig7a.pdf`, `~/colloid-eval/fig7b.pdf`, `~/colloid-eval/fig7c.pdf`. You can copy these images onto your laptop/workstation (e.g. via scp), and view them locally.
 
 ### Figure 8a (Time: 45 mins)
 
@@ -150,6 +150,6 @@ Use the following script to plot the graph of throughput over time (using gnuplo
 ./plot_fig8e.sh
 ```
 
-The output plots is generated at `~/colloid-eval/fig8e.eps`. You can copy this image onto your laptop/workstation (e.g. via scp), and view it locally.
+The output plots is generated at `~/colloid-eval/fig8e.pdf`. You can copy this image onto your laptop/workstation (e.g. via scp), and view it locally.
 
 

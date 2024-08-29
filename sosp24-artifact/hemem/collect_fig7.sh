@@ -3,16 +3,13 @@
 scripts_path="${BASH_SOURCE%/*}/../../scripts"
 i=15 # no. of app cores
 
-# paste <(echo "Intensity") <(echo "HeMem") <(echo "HeMem+colloid") | column -t
-# for b in 0 5 10 15; do
-#     paste <(echo "$(($b/5))x" ) <(python3 $scripts_path/collect_ts.py hemem-gups64-rw-app$i-bg$b gups | tail -n 30 | awk '{s += $1;} END {print (s/NR)*64*2/1e9;}') <(python3 $scripts_path/collect_ts.py hemem-colloid-gups64-rw-app$i-bg$b gups | tail -n 30 | awk '{s += $1;} END {print (s/NR)*64*2/1e9;}') |column -t;
-# done;
+source $scripts_path/config.sh
 
-printf "%-10s %-10s %-10s\n" "Intensity" "HeMem" "HeMem+colloid"
+python3 $scripts_path/collect_ts.py hotsetmove-hemem-gups64-rw-app15-bg0 gups > $stats_path/fig7a-hemem.tsv
+python3 $scripts_path/collect_ts.py hotsetmove-hemem-colloid-gups64-rw-app15-bg0 gups > $stats_path/fig7a-hemem-colloid.tsv
 
-for b in 0 5 10 15; do
-    hemem_output=$(python3 $scripts_path/collect_ts.py hemem-gups64-rw-app$i-bg$b gups | tail -n 30 | awk '{s += $1;} END {print (s/NR)*64*2/1e9;}')
-    hemem_colloid_output=$(python3 $scripts_path/collect_ts.py hemem-colloid-gups64-rw-app$i-bg$b gups | tail -n 30 | awk '{s += $1;} END {print (s/NR)*64*2/1e9;}')
-    
-    printf "%-10s %-10s %-10s\n" "$(($b/5))x" "$hemem_output" "$hemem_colloid_output"
-done
+python3 $scripts_path/collect_ts.py hotsetmove-hemem-gups64-rw-app15-bg15 gups > $stats_path/fig7b-hemem.tsv
+python3 $scripts_path/collect_ts.py hotsetmove-hemem-colloid-gups64-rw-app15-bg15 gups > $stats_path/fig7b-hemem-colloid.tsv
+
+python3 $scripts_path/collect_ts.py dynbg-hemem-gups64-rw-app15-bg15 gups > $stats_path/fig7c-hemem.tsv
+python3 $scripts_path/collect_ts.py dynbg-hemem-colloid-gups64-rw-app15-bg15 gups > $stats_path/fig7c-hemem-colloid.tsv

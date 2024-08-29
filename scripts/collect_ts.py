@@ -10,6 +10,8 @@ def load_gups(d, filepath):
         for line in f:
             if 'Total' in line or 'memset' in line or 'size' in line:
                 continue
+            if 'moved' in line or 'hotset' in line:
+                continue
             d['gups'].append(float(line.strip()))
 
 
