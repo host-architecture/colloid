@@ -64,7 +64,17 @@ The results can be queried using:
 ./collect_fig6.sh 3
 ```
 
-The output shows the throughput for TPP and TPP+colloid, along with the relative performance improvement (TPP+colloid throughput / TPP throughput). The latter set of numbers correspond to the values shown in the Fig 6a plot.
+The output shows the throughput for TPP and TPP+colloid, along with the relative performance improvement (TPP+colloid throughput / TPP throughput). The latter set of numbers correspond to the values shown in the Fig 6c plot.
+
+Since, the Fig 6c heatmap may be difficult to read, for reference, we provide the aboslute numbers presented in the paper below (columns correspond to different BG loads). If you ran the above with argument of 3, then the output should match the last column below.  
+
+| Unloaded latency | 0x       | 1x       | 2x       | **3x**    |
+|------------------|----------|----------|----------|-----------|
+| 135ns            | 1.025145 | 1.101156 | 1.424125 | **1.805556**  |
+| 148ns            | 1.010675 | 1.066978 | 1.329049 | **1.716613** |
+| 168ns            | 1.016325 | 1.015162 | 1.226774 | **1.58904**  |
+| 192ns            | 1.002607 | 1.01176  | 1.14426  | **1.497136**  |
+
 
 
 ### Figure 8a (Time: 60 mins)
