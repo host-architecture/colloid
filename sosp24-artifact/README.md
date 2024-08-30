@@ -32,5 +32,7 @@ We recommend running experiments in the order of systems (i.e., run all experime
 |  TPP w/ THP (+colloid) |  	Figure 4, 6, 8   |     [tppthp](tppthp)  |   5.5 hrs  |
 |   TPP (+colloid)       | 	Figure 4, 6, 8   |     [tpp](tpp)   |  5 hrs    |  
 
+(Note: Figure 1 is a subset of Figure 4; Figures 2 and 5 are auxiliary figures used to explain Figures 1 and 4 experiments---they do not correspond to standalone experiments, and are therefore omitted)
+
 
 **Tip:** Since many of the individual experiments take on the order of several minutes to complete, we strongly recommend using `tmux`/`screen` to avoid experiments from being disrupted by ssh getting disconnected. For a crash course on `tmux` see [here](tmux-usage.md). 
