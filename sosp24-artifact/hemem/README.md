@@ -58,6 +58,16 @@ Once complete, the results can be queried using:
 
 The output shows the throughput for HeMem and HeMem+colloid, along with the relative performance improvement (HeMem+colloid throughput / HeMem throughput). The latter set of numbers correspond to the values shown in the Fig 6a plot.
 
+Since, the Fig 6a heatmap may be difficult to read, for reference, we provide the aboslute numbers presented in the paper below (columns correspond to different BG loads). If you ran the above with argument of 3, then the output should match the last column below.  
+
+| Unloaded latency | 0x       | 1x       | 2x       | **3x**    |
+|------------------|----------|----------|----------|-----------|
+| 135ns            | 1.007752 | 1.173469 | 1.652047 | **2.36087**  |
+| 148ns            | 0.995732 | 1.089532 | 1.536287 | **2.191315** |
+| 168ns            | 0.993329 | 1.022539 | 1.373172 | **1.973035** |
+| 192ns            | 0.992476 | 1.014174 | 1.254353 | **1.764588** |
+
+
 ### Figure 7 (Time: 20 mins)
 
 The following runs experiments for Figs 7a, 7b, 7c:
