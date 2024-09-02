@@ -107,7 +107,19 @@ The results can be compiled using:
 ./collect_fig8b.sh
 ```
 
-The output shows the performance of TPP and TPP+colloid along with relative performance improvement (in percentage). Note that performance here is the throughput achieved by Silo, and hence, higher is better. The performance improvement numbers correspond to the TPP+colloid bars in Fig 8b.
+The output shows the performance of TPP and TPP+colloid along with relative performance improvement (in percentage). Note that performance here is the throughput achieved by Silo, and hence, higher is better. The performance improvement numbers correspond to the purple bars in Fig 8b (The TPP+colloid and TPP w/ THP+colloid bars were swapped by mistake in Fig 8b of the submission).
+
+Note: In this particular experiment, we observe some variation (up to ~15%) in TPP and TPP+colloid performance across runs, so the results may not match exactly (we plan to show error bars in the final version of the paper to account for this). For reference, we provide the absolute performance numbers from Fig 8b result below (you can check TPP and TPP+colloid performance numbers individually):
+
+| BG intensity | TPP       | TPP+colloid | Improvement (%) |
+|----------|-----------|-------------|-----------------|
+| 0x        | 1.11E+07  | 1.11E+07    | 0.50            |
+| 1x        | 9.07E+06  | 9.32E+06    | 2.78            |
+| 2x       | 7.85E+06  | 8.56E+06    | 9.03            |
+| 3x       | 5.99E+06  | 7.49E+06    | 25.08           |
+
+
+
 
 ### Figure 8c (Time: 60 mins)
 

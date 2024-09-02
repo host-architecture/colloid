@@ -104,9 +104,18 @@ The results can be compiled using:
 ./collect_fig8b.sh
 ```
 
-The output shows the performance of TPP and TPP+colloid along with relative performance improvement (in percentage). Note that performance here is the throughput achieved by Silo, and hence, higher is better. The performance improvement numbers correspond to the TPP+colloid bars in Fig 8b.
+The output shows the performance of TPP and TPP+colloid along with relative performance improvement (in percentage). Note that performance here is the throughput achieved by Silo, and hence, higher is better. The performance improvement numbers correspond to the gray bars in Fig 8b (The TPP+colloid and TPP w/ THP+colloid bars were swapped by mistake in Fig 8b of the submission).
 
-Note: For the above Silo experiments, in some rare scenarios, we have found that the kernel crashes at the end of an experiment run when the application is exiting. This does not impact the results. If this happens, the server will automatically reboot, and your ssh will get disconnected. You should be able to log back in once it is back up (in 5-10 minutes). Once back online, just run `sudo ./init.sh`, and re-run the above scripts.
+Note: In this particular experiment, we observe some variation (up to ~15%) in TPP w/ THP and TPP w/ THP+colloid performance across runs, so the results may not match exactly (we plan to show error bars in the final version of the paper to account for this). For reference, we provide the absolute performance numbers from Fig 8b result below (you can check TPP and TPP+colloid performance numbers individually):
+
+
+| BG intensity | TPP w/ THP | TPP w/ THP +colloid | Improvement (%) |
+|----------|------------|---------------------|-----------------|
+| 0x        | 1.10E+07   | 1.10E+07            | 0.00            |
+| 1x        | 9.08E+06   | 9.32E+06            | 2.67            |
+| 2x       | 7.48E+06   | 8.27E+06            | 10.64           |
+| 3x       | 6.12E+06   | 7.25E+06            | 18.49           |
+
 
 ### Figure 8c (Time: 60 mins)
 
