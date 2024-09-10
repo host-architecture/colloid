@@ -5,8 +5,8 @@ i=15 # no. of app cores
 
 source $scripts_path/config.sh
 
-$results_path=$memtis_path/memtis-userspace/results/gapbs-pr
-$r="1:2"
+results_path=$memtis_path/memtis-userspace/results/gapbs-pr
+r="1:2"
 
 printf "%-15s %-15s %-15s %-15s\n" "Intensity" "memtis" "memtis+colloid" "Perf. Improvement (%)"
 
