@@ -24,7 +24,7 @@ done;
 
 for b in 0 5 10 15; do
     start_time=$(date +%s)
-    $scripts_path/memtis-colloid.sh $prefix-colloid-silo-ycsb-app15-bg$b 15 $b -- $memtis_path/memtis-userspace/scripts/run_bench.sh -B silo-pr -R 1:2 --cxl $ns_arg -V $prefix-colloid-silo-ycsb-app15-bg$b 
+    $scripts_path/memtis-colloid.sh $prefix-colloid-silo-ycsb-app15-bg$b 15 $b -- $memtis_path/memtis-userspace/scripts/run_bench.sh -B silo -R 1:2 --cxl $ns_arg -V $prefix-colloid-silo-ycsb-app15-bg$b 
     end_time=$(date +%s)
     elapsed_time=$(($end_time - $start_time))
     echo "Took $elapsed_time seconds" >> $stats_path/memtis-colloid-silo-ycsb-app15-bg$b.time.txt
