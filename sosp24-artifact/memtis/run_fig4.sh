@@ -2,7 +2,7 @@
 
 scripts_path="${BASH_SOURCE%/*}/../../scripts"
 gups_path="${BASH_SOURCE%/*}/../../apps/gups"
-duration=100
+duration=180
 i=15 # no. of app cores
 
 source $scripts_path/config.sh

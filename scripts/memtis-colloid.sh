@@ -5,6 +5,7 @@ config=$1
 mio_path=/home/midhul/mio
 record_path=/home/midhul/colloid/colloid-stats
 stats_path=/home/midhul/membw-eval
+colloidmon_path=/home/midhul/memtis/colloid-mon
 # gups_workload=$2
 # gups_cores=4
 # stream_num_cores=3
@@ -36,6 +37,8 @@ function cleanup() {
     done;
     killall python3
     killall stream
+    killall bpftrace > /dev/null 2>&1;
+    rmmod colloid-mon.ko > /dev/null 2>&1;
     echo "Cleaned up";
 }
 
@@ -43,10 +46,26 @@ trap cleanup EXIT
 
 cleanup;
 
+insmod $colloidmon_path/colloid-mon.ko
+
+# Make sure colloid-mon kernel module is loaded
+if ! lsmod | grep -q "colloid_mon"; then
+    echo "colloid-mon not loaded";
+    exit 1;
+fi
+
+# Trace colloid-mon
+addr_occ_local=$(cat /proc/kallsyms | grep smoothed_occ_local | awk '{print "0x"$1}')
+addr_occ_remote=$(cat /proc/kallsyms | grep smoothed_occ_remote | awk '{print "0x"$1}')
+addr_inserts_local=$(cat /proc/kallsyms | grep smoothed_inserts_local | awk '{print "0x"$1}')
+addr_inserts_remote=$(cat /proc/kallsyms | grep smoothed_inserts_remote | awk '{print "0x"$1}')
+addr_p_lo=$(cat /proc/kallsyms | grep p_lo | grep colloid | awk '{print "0x"$1}')
+addr_p_hi=$(cat /proc/kallsyms | grep p_hi | grep colloid | awk '{print "0x"$1}')
+
 # Make sure swap is disabled
 swapoff -a
-# Disable colloid
-echo "disabled" > /sys/kernel/mm/htmm/htmm_colloid
+# Enable colloid
+echo "enabled" > /sys/kernel/mm/htmm/htmm_colloid
 
 mio_opts=( $MIO_STATS )
 
@@ -64,6 +83,11 @@ elif [ "${#mio_opts[@]}" -gt 0 ]; then
 	sleep 7;
 fi
 
+echo "running bpftrace for logging";
+bpftrace -e "BEGIN {@start = nsecs;} interval:s:1 {printf(\"colloid-moin, %ld, colloid_local_lat_gt_remote: %d, local_occ: %lu, remote_occ: %lu, local_inserts: %lu, remote_inserts: %lu, p_lo: %lu, p_hi: %lu, delta_p=%lu, dynlimit=%lu\n\", (nsecs-@start)/1e9, *kaddr(\"colloid_local_lat_gt_remote\"), *($addr_occ_local), *($addr_occ_remote), *($addr_inserts_local), *($addr_inserts_remote), *($addr_p_lo), *($addr_p_hi), *kaddr(\"colloid_delta_p\"), *kaddr(\"colloid_dynlimit\"));} tracepoint:colloid:colloid_migrate {printf("colloid migrate, nr_migrated=%lu, promotion=%d, nr_to_scan=%lu, delta_p=%lu, migrate_limit=%lu, overall_accesses=%lu \n", args.nr_migrated, args.promotion, args.nr_to_scan, args.delta_p, args.migrate_limit, args.overall_accesses);}" > $stats_path/$config.mon.txt 2>&1 &
+pid_bpf=$!;
+
+
 # run actual app
 echo "Running $config"
 "${args_after_double_dash[@]}";
@@ -78,6 +102,13 @@ if [ $bg_cores -gt 0 ] || [ "${#mio_opts[@]}" -gt 0 ]; then
 	killall python3
 	killall stream
 fi
+
+killall bpftrace > /dev/null 2>&1;
+while kill -0 $pid_bpf > /dev/null 2>&1; do
+    sleep 1;
+done;
+
+rmmod colloid-mon.ko > /dev/null 2>&1;
 
 
 
