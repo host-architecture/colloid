@@ -11,8 +11,8 @@ r="1:2"
 printf "%-15s %-15s %-15s %-15s\n" "Intensity" "memtis" "memtis+colloid" "Perf. Improvement (%)"
 
 for b in 0 5 10 15; do
-    memtis_output=$(cat $results_path/silo/memtis-silo-ycsb-app15-bg$b/$r/output.log | grep -iv 'total' | awk '{print $1}')
-    memtis_colloid_output=$(cat $results_path/silo/memtis-colloid-silo-ycsb-app15-bg$b/$r/output.log | grep -iv 'total' | awk '{print $1}')
+    memtis_output=$(cat $results_path/silo/memtis-silo-ycsb-app15-bg$b/$r/output.log | grep "purging" -B1 | head -n 1 | awk '{print $1}')
+    memtis_colloid_output=$(cat $results_path/silo/memtis-colloid-silo-ycsb-app15-bg$b/$r/output.log | grep "purging" -B1 | head -n 1 | awk '{print $1}')
     impr=$(awk -v num="$memtis_colloid_output" -v den="$memtis_output" 'BEGIN {print (num/den - 1.0)*100.0;}')
     printf "%-15s %-15s %-15s %-15s\n" "$(($b/5))x" "$memtis_output" "$memtis_colloid_output" "$impr"
 done
