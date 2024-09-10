@@ -2,6 +2,7 @@
 
 scripts_path="${BASH_SOURCE%/*}/../../scripts"
 gups_path="${BASH_SOURCE%/*}/../../apps/gups"
+workloads_path="${BASH_SOURCE%/*}/../../workloads"
 
 source $scripts_path/config.sh
 
@@ -27,6 +28,6 @@ MEMTIS_GUPS_CORES=15 MEMTIS_GUPS_DURATION=200 MEMTIS_GUPS_MOVE=100 $scripts_path
 
 # Fig 7c
 echo "Running 7c memtis"
-MEMTIS_GUPS_CORES=15 MEMTIS_GUPS_DURATION=200 MEMTIS_GUPS_DELAY_BG=100 $scripts_path/memtis.sh dynbg-$prefix-gups64-rw-app15-bg15 15 15 -- $memtis_path/memtis-userspace/scripts/run_bench.sh -B gups -R gups64-rw --cxl $ns_arg -V dynbg-$prefix-gups64-rw-app15-bg15
+MEMTIS_GUPS_CORES=15 MEMTIS_GUPS_DURATION=200 MIO_STATS="--ant_vary_load $workloads_path/delaybg100.txt" $scripts_path/memtis.sh dynbg-$prefix-gups64-rw-app15-bg15 15 15 -- $memtis_path/memtis-userspace/scripts/run_bench.sh -B gups -R gups64-rw --cxl $ns_arg -V dynbg-$prefix-gups64-rw-app15-bg15
 echo "Running 7c memtis+colloid"
-MEMTIS_GUPS_CORES=15 MEMTIS_GUPS_DURATION=200 MEMTIS_GUPS_DELAY_BG=100 $scripts_path/memtis-colloid.sh dynbg-$prefix-colloid-gups64-rw-app15-bg15 15 15 -- $memtis_path/memtis-userspace/scripts/run_bench.sh -B gups -R gups64-rw --cxl $ns_arg -V dynbg-$prefix-colloid-gups64-rw-app15-bg15
+MEMTIS_GUPS_CORES=15 MEMTIS_GUPS_DURATION=200 MIO_STATS="--ant_vary_load $workloads_path/delaybg100.txt" $scripts_path/memtis-colloid.sh dynbg-$prefix-colloid-gups64-rw-app15-bg15 15 15 -- $memtis_path/memtis-userspace/scripts/run_bench.sh -B gups -R gups64-rw --cxl $ns_arg -V dynbg-$prefix-colloid-gups64-rw-app15-bg15
