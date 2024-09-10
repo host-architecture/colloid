@@ -11,8 +11,8 @@ r="1:2"
 printf "%-15s %-15s %-15s %-15s\n" "Intensity" "memtis" "memtis+colloid" "Perf. Improvement (%)"
 
 for b in 0 5 10 15; do
-    memtis_output=$(cat $results_path_path/memtis-gapbs-twitter-1to2-app15-bg$b/$r/output.log | grep -i average | awk '{print $3}')
-    memtis_colloid_output=$(cat $results_path_path/memtis-colloid-gapbs-twitter-1to2-app15-bg$b/$r/output.log | grep -i average | awk '{print $3}')
+    memtis_output=$(cat $results_path/memtis-gapbs-twitter-1to2-app15-bg$b/$r/output.log | grep -i average | awk '{print $3}')
+    memtis_colloid_output=$(cat $results_path/memtis-colloid-gapbs-twitter-1to2-app15-bg$b/$r/output.log | grep -i average | awk '{print $3}')
     impr=$(awk -v num="$memtis_output" -v den="$memtis_colloid_output" 'BEGIN {print (num/den - 1.0)*100.0;}')
     printf "%-15s %-15s %-15s %-15s\n" "$(($b/5))x" "$memtis_output" "$memtis_colloid_output" "$impr"
 done
