@@ -3,7 +3,7 @@
 scripts_path="${BASH_SOURCE%/*}/../../scripts"
 gups_path="${BASH_SOURCE%/*}/../../apps/gups"
 duration=120
-i=15 # no. of app cores
+# i=15 # no. of app cores
 # bg_cores=$(($1*5)) #background traffic cores (0x => 0, 1x => 5, 2x => 10, 3x => 15)
 source $scripts_path/config.sh
 
