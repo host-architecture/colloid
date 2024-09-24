@@ -98,6 +98,12 @@ if [ $delay_bg -eq 0 ]; then
     fi
 fi
 
+# Start CPU usage monitoring with sar
+sar_logfile="$stats_path/$config.sar.txt"
+sar -u -P ALL 1 > $sar_logfile 2>&1 &
+pid_sar=$!;
+all_pids+=($pid_sar);
+
 # run actual app
 echo "Running $config"
 LD_LIBRARY_PATH=$lib_path LD_PRELOAD=$hemem_lib "${args_after_double_dash[@]}" > $stats_path/$config.app.txt 2> $stats_path/$config.hemem.txt &
@@ -127,6 +133,13 @@ if [ $duration -gt 0 ]; then
 else
     wait $pid_app;
 fi
+
+# Stop sar monitoring
+kill $pid_sar > /dev/null 2>&1;
+while kill -0 $pid_sar > /dev/null 2>&1; do
+    sleep 1;
+done;
+killall sar > /dev/null 2>&1;
 
 head -n -1 /tmp/hemem-colloid.log > $stats_path/$config.hemem-colloid.log
 
