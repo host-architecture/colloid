@@ -17,7 +17,8 @@ fi
 
 # MEMTIS
 echo "Running MEMTIS"
-for b in 0 5 10 15; do
+#for b in 0 5 10 15; do
+for b in 20 25; do
     for i in $(seq 5 5 $((30-$b))); do
         MEMTIS_GUPS_CORES=$i MEMTIS_GUPS_DURATION=$duration $scripts_path/memtis.sh $prefix-gups64-rw-app$i-bg$b $i $b -- $memtis_path/memtis-userspace/scripts/run_bench.sh -B gups -R gups64-rw --cxl $ns_arg -V $prefix-gups64-rw-app$i-bg$b
     done; 
@@ -25,7 +26,8 @@ done;
 
 # HeMem+colloid
 echo "Running MEMTIS+colloid"
-for b in 0 5 10 15; do
+#for b in 0 5 10 15; do
+for b in 20 25; do
     for i in $(seq 5 5 $((30-$b))); do
         MEMTIS_GUPS_CORES=$i MEMTIS_GUPS_DURATION=$duration $scripts_path/memtis-colloid.sh $prefix-colloid-gups64-rw-app$i-bg$b $i $b -- $memtis_path/memtis-userspace/scripts/run_bench.sh -B gups -R gups64-rw --cxl $ns_arg -V $prefix-colloid-gups64-rw-app$i-bg$b
     done; 

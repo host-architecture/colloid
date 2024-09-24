@@ -6,7 +6,7 @@ scripts_path="${BASH_SOURCE%/*}/../../scripts"
 
 source $scripts_path/config.sh
 
-prefix="memtis"
+prefix="run3-memtis"
 ns_arg=""
 if [ -n "${MEMTIS_NS}" ]; then
     echo "Disabling page size determination";

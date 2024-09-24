@@ -13,7 +13,7 @@ i=15 # no. of app cores
 # bg_cores=$(($1*5)) #background traffic cores (0x => 0, 1x => 5, 2x => 10, 3x => 15)
 source $scripts_path/config.sh
 
-prefix="memtis"
+prefix="run2-memtis"
 ns_arg=""
 if [ -n "${MEMTIS_NS}" ]; then
     echo "Disabling page size determination";
