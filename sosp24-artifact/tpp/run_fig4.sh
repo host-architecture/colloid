@@ -8,11 +8,11 @@ i=15 # no. of app cores
 # TPP
 echo "Running TPP"
 for b in 0 5 10 15; 
-    do $scripts_path/linux.sh tpp-gups64-rw-app$i-bg$b $duration $i $b -- $gups_path/gups64-rw $i; 
+    do MIO_STATS="--stats_colloid_mbm --stats_colloid_wait 570" $scripts_path/linux.sh tpp-gups64-rw-app$i-bg$b $duration $i $b -- $gups_path/gups64-rw $i; 
 done;
 
 # TPP+colloid
 echo "Running TPP+colloid"
 for b in 0 5 10 15; 
-    do $scripts_path/linux-colloid.sh tpp-colloid-gups64-rw-app$i-bg$b $duration $i $b -- $gups_path/gups64-rw $i; 
+    do MIO_STATS="--stats_colloid_mbm --stats_colloid_wait 570" $scripts_path/linux-colloid.sh tpp-colloid-gups64-rw-app$i-bg$b $duration $i $b -- $gups_path/gups64-rw $i; 
 done;
