@@ -1,7 +1,7 @@
 import sys, os, glob
 import argparse
 
-STATS_PATH = '/home/sosp24ae/colloid-eval'
+STATS_PATH = '/home/midhul/membw-eval'
 
 def load_gups(d, filepath):
     with open(filepath, 'r') as f:
