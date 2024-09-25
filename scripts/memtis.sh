@@ -64,11 +64,24 @@ elif [ "${#mio_opts[@]}" -gt 0 ]; then
 	sleep 7;
 fi
 
+# Start CPU usage monitoring with sar
+sar_logfile="$stats_path/$config.sar.txt"
+sar -u -P ALL 1 > $sar_logfile 2>&1 &
+pid_sar=$!;
+all_pids+=($pid_sar);
+
 # run actual app
 echo "Running $config"
 "${args_after_double_dash[@]}";
 # pid_app=$!;
 # all_pids+=($pid_app);
+
+# Stop sar monitoring
+kill $pid_sar > /dev/null 2>&1;
+while kill -0 $pid_sar > /dev/null 2>&1; do
+    sleep 1;
+done;
+killall sar > /dev/null 2>&1;
 
 if [ $bg_cores -gt 0 ] || [ "${#mio_opts[@]}" -gt 0 ]; then
 	kill $pid_mio;

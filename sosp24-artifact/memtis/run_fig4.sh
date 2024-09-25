@@ -8,6 +8,11 @@ i=15 # no. of app cores
 source $scripts_path/config.sh
 
 prefix="mbm4-memtis"
+if [ -n "$PREFIX" ]; then
+	prefix="$PREFIX"
+	echo "prefix: $prefix";
+fi
+
 ns_arg=""
 if [ -n "${MEMTIS_NS}" ]; then
     echo "Disabling page size determination";
