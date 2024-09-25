@@ -87,12 +87,24 @@ echo "running bpftrace for logging";
 bpftrace -e "BEGIN {@start = nsecs;} interval:s:1 {printf(\"colloid-moin, %ld, colloid_local_lat_gt_remote: %d, local_occ: %lu, remote_occ: %lu, local_inserts: %lu, remote_inserts: %lu, p_lo: %lu, p_hi: %lu, delta_p=%lu, dynlimit=%lu\n\", (nsecs-@start)/1e9, *kaddr(\"colloid_local_lat_gt_remote\"), *($addr_occ_local), *($addr_occ_remote), *($addr_inserts_local), *($addr_inserts_remote), *($addr_p_lo), *($addr_p_hi), *kaddr(\"colloid_delta_p\"), *kaddr(\"colloid_dynlimit\"));} tracepoint:colloid:colloid_migrate {printf("colloid migrate, nr_migrated=%lu, promotion=%d, nr_to_scan=%lu, delta_p=%lu, migrate_limit=%lu, overall_accesses=%lu \n", args.nr_migrated, args.promotion, args.nr_to_scan, args.delta_p, args.migrate_limit, args.overall_accesses);}" > $stats_path/$config.mon.txt 2>&1 &
 pid_bpf=$!;
 
+# Start CPU usage monitoring with sar
+sar_logfile="$stats_path/$config.sar.txt"
+sar -u -P ALL 1 > $sar_logfile 2>&1 &
+pid_sar=$!;
+all_pids+=($pid_sar);
 
 # run actual app
 echo "Running $config"
 "${args_after_double_dash[@]}";
 # pid_app=$!;
 # all_pids+=($pid_app);
+
+# Stop sar monitoring
+kill $pid_sar > /dev/null 2>&1;
+while kill -0 $pid_sar > /dev/null 2>&1; do
+    sleep 1;
+done;
+killall sar > /dev/null 2>&1;
 
 if [ $bg_cores -gt 0 ] || [ "${#mio_opts[@]}" -gt 0 ]; then
 	kill $pid_mio;
