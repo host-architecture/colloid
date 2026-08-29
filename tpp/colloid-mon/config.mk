@@ -6,7 +6,8 @@
 # 	icx-native: Intel Icelake (native)
 # 	clx-native: Intel Cascadelake (native)
 # 	hsw-native: Intel Haswell (native)
-BACKEND ?= icx-native
+# 	spr-native: Intel Sapphire Rapids (native)
+BACKEND ?= spr-native
 
 # Default/alternate tier types
 # Currently supported tier types

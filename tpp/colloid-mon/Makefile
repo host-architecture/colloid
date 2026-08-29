@@ -49,6 +49,18 @@ else ifeq ($(BACKEND), hsw-native)
         $(error Backend $(BACKEND) does not support tier $(ALTERNATE_TIER).)
     endif
     endif
+else ifeq ($(BACKEND), spr-native)
+	colloid-mon-objs += backend/spr-native.o
+	ifneq ($(DEFAULT_TIER), local-dram)
+    ifneq ($(DEFAULT_TIER), remote-dram)
+        $(error Backend $(BACKEND) does not support tier $(DEFAULT_TIER).)
+    endif
+    endif
+	ifneq ($(ALTERNATE_TIER), local-dram)
+    ifneq ($(ALTERNATE_TIER), remote-dram)
+        $(error Backend $(BACKEND) does not support tier $(ALTERNATE_TIER).)
+    endif
+    endif
 else
 	$(error Invalid backend: $(BACKEND).)
 endif
